@@ -453,6 +453,7 @@ Papa.parse("nhansu.csv", {
   header: true,
   complete: function(results) {
     employees = results.data;   // ghi đè danh sách nhân viên
+	localStorage.employees = JSON.stringify(employees);
     renderEmployees();          // hiển thị lại bảng
   }
 });
