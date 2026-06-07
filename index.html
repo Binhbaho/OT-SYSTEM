@@ -452,11 +452,22 @@ Papa.parse("nhansu.csv", {
   download: true,
   header: true,
   complete: function(results) {
-    employees = results.data;   // ghi đè danh sách nhân viên
-	localStorage.employees = JSON.stringify(employees);
-    renderEmployees();          // hiển thị lại bảng
+    employees = results.data.map(e => ({
+      code: e.code.trim(),
+      name: e.name.trim(),
+      dept: e.dept.trim(),
+      password: e.password.trim()
+    }));
+
+    // Thêm admin vào danh sách để login vẫn nhận
+    employees.push({code:'admin', name:'Quản trị viên', dept:'', password:'6180'});
+
+    localStorage.employees = JSON.stringify(employees);
+    loadData();
+    renderEmployees();
   }
 });
+
 </script>
 </body>
 </html>
