@@ -164,6 +164,7 @@ tr:hover{background:#f1f5f9}
 </div>
 </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script> //thêm mới
 
 <script>
 let employees=[], overtime=[];
@@ -442,33 +443,29 @@ function importOT(event) {
   };
   reader.readAsText(file);
 }
-//<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js">
-//</script>
-//<script>
+
+<script>
 initData();
 loadData();
 
 // Sau khi hệ thống đã khởi tạo, mới load CSV
-//Papa.parse("nhansu.csv", {
-//  download: true,
- // header: true,
-//  complete: function(results) {
-//    employees = results.data.map(e => ({
-//      code: e.code.trim(),
- //     name: e.name.trim(),
- //     dept: e.dept.trim(),
- //     password: e.password.trim()
- //   }));
-
-    // Thêm admin vào danh sách để login vẫn nhận
-  //  employees.push({code:'admin', name:'Quản trị viên', dept:'', password:'6180'});
-
-  //  localStorage.employees = JSON.stringify(employees);
-   // loadData();
-  //  renderEmployees();
- // }
-//});
-
-//</script>
+Papa.parse("nhansu.csv", {
+  download: true,
+  header: true,
+  complete: function(results) {
+    employees = results.data.map(e => ({
+      code: e.code?.trim(),
+      name: e.name?.trim(),
+      dept: e.dept?.trim(),
+      password: e.password?.trim()
+    }));
+    // Giữ lại admin để không mất
+    employees.push({code:'admin', name:'Quản trị viên', dept:'', password:'6180'});
+    localStorage.employees = JSON.stringify(employees);
+    loadData();
+    renderEmployees();
+  }
+});
+</script>
 </body>
 </html>
