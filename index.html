@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+	<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ Thống Tra Cứu Tăng Ca</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{background:#f8fafc;color:#1e293b}
+.login{display:flex;align-items:center;justify-content:center;height:100vh}
+.card{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.1);width:380px}
+.logo{width:70px;height:70px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:auto}
+h1{text-align:center;margin:15px 0;color:#1e40af;font-size:22px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin:6px 0}
+button{background:#2563eb;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+button:hover{background:#1e40af}
+.app{display:none;height:100vh}
+.sidebar{width:240px;background:#1e40af;color:#fff;padding:15px}
+.sidebar h2{margin-bottom:15px}
+.sidebar a{display:block;color:#fff;text-decoration:none;padding:10px;border-radius:8px;margin:4px 0}
+.sidebar a:hover{background:rgba(255,255,255,.15)}
+.main{flex:1;display:flex;flex-direction:column}
+.header{background:#fff;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.content{padding:20px;overflow:auto}
+.layout{display:flex;height:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.stat{background:#fff;padding:20px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.table-wrap{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08);margin-top:15px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
+tr:hover{background:#f1f5f9}
+.hidden{display:none}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:768px){
+.layout{flex-direction:column}
+.sidebar{width:100%}
+.row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="loginPage" class="login">
+<div class="card">
+<div class="logo">OT</div>
+<h1>HỆ THỐNG TRA CỨU TĂNG CA</h1>
+<input id="username" placeholder="Tên đăng nhập">
+<input id="password" type="password" placeholder="Mật khẩu">
+<button onclick="login()" style="width:100%">Đăng nhập</button>
+</div>
+</div>
+
+<div id="app" class="app">
+<div class="layout">
+<div class="sidebar">
+<h2>MENU</h2>
+<div id="adminMenu">
+<a href="#" onclick="showPage('home')">Trang chủ</a>
+<a href="#" onclick="showPage('employees')">Quản lý nhân viên</a>
+<a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
+<a href="#" onclick="showPage('report')">Báo cáo</a>
+</div>
+<div id="empMenu">
+<a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
+</div>
+<a href="#" onclick="logout()">Đăng xuất</a>
+</div>
+
+<div class="main">
+<div class="header">
+<span id="welcome"></span>
+</div>
+<div class="content">
+
+<div id="home" class="page">
+<h2>Dashboard</h2>
+<div class="cards">
+<div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
+<div class="stat"><h3>Tổng lịch tăng ca</h3><h1 id="sOt">0</h1></div>
+<div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
+</div>
+</div>
+
+<div id="employees" class="page hidden">
+<button onclick="exportEmployees()">Xuất CSV Nhân viên</button>
+<input type="file" id="importEmpFile" accept=".csv" onchange="importEmployees(event)">
+
+<h2>Quản lý nhân viên</h2>
+<div class="table-wrap">
+<div class="row">
+<input id="eCode" placeholder="Mã NV">
+<input id="eName" placeholder="Họ tên">
+<input id="eDept" placeholder="Bộ phận">
+<input id="ePass" placeholder="Mật khẩu">
+</div><br>
+<button onclick="saveEmployee()">Lưu</button>
+<table>
+<thead><tr><th>Mã nhân viên</th><th>Họ và tên</th><th>Công đoạn</th><th>Thao tác</th></tr></thead>
+<tbody id="employeeTable">
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="overtime" class="page hidden">
+<button onclick="exportOT()">Xuất CSV Tăng ca</button>
+<input type="file" id="importOTFile" accept=".csv" onchange="importOT(event)">
+
+<h2>Quản lý tăng ca</h2>
+<div class="table-wrap">
+<div class="row">
+<select id="otEmp"></select>
+<input id="otDate" type="date">
+<input id="otStart" type="time">
+<input id="otEnd" type="time">
+<select id="otShift">
+    <option value="Ca 1">Ca 1</option>
+    <option value="Ca 2">Ca 2</option>
+    <option value="Ca 3">Ca 3</option>
+    <option value="Ca HC">Ca HC</option>
+  </select>
+</div>
+<textarea id="otWork" placeholder="Nội dung công việc"></textarea>
+<button onclick="saveOT()">Lưu</button>
+<table>
+<thead>
+  <tr>
+    <th>STT</th>
+    <th>NV</th>
+    <th>Ca</th>
+    <th>Ngày</th>
+    <th>Bắt đầu</th>
+    <th>Kết thúc</th>    
+    <th>Công việc</th>
+    <th>Thao tác</th>
+  </tr>
+</thead>
+
+<tbody id="otTable"></tbody>
+</table>
+</div>
+</div>
+
+<div id="report" class="page hidden">
+<h2>Báo cáo</h2>
+<div class="cards">
+<div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
+<div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
+<div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
+</div>
+</div>
+
+<div id="myovertime" class="page hidden">
+<h2>Lịch tăng ca của tôi</h2>
+<input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
+<div class="table-wrap">
+<table>
+<thead><tr><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
+<tbody id="myTable"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let employees=[], overtime=[];
+let editEmp=null, editOT=null, currentUser=null;
+
+function initData(){
+if(!localStorage.employees){
+employees=[
+{code:'NV001',name:'Nguyễn Văn An',dept:'Sản xuất',password:'1111'},
+{code:'NV002',name:'Trần Thị Bình',dept:'Kế toán',password:'2222'},
+{code:'NV003',name:'Lê Văn Cường',dept:'Kho',password:'3333'}
+];
+localStorage.employees=JSON.stringify(employees);
+}
+if(!localStorage.overtime){
+overtime=[
+{emp:'NV001',date:'2026-06-10',start:'18:00',end:'21:00',work:'Kiểm hàng'},
+{emp:'NV002',date:'2026-06-11',start:'17:30',end:'20:30',work:'Làm báo cáo'},
+{emp:'NV003',date:'2026-06-12',start:'18:00',end:'22:00',work:'Xuất kho'}
+];
+localStorage.overtime=JSON.stringify(overtime);
+}
+}
+
+function loadData(){
+employees=JSON.parse(localStorage.employees||'[]');
+overtime=JSON.parse(localStorage.overtime||'[]');
+}
+
+function saveData(){
+localStorage.employees=JSON.stringify(employees);
+localStorage.overtime=JSON.stringify(overtime);
+}
+
+function login(){
+let u=username.value.trim();
+let p=password.value.trim();
+
+if(u==='admin'&&p==='6180'){
+currentUser={role:'admin',name:'Quản trị viên'};
+startApp();
+return;
+}
+
+let emp=employees.find(x=>x.code===u&&x.password===p);
+if(emp){
+currentUser={role:'employee',...emp};
+startApp();
+}else alert('Sai thông tin đăng nhập');
+}
+
+function startApp(){
+loginPage.style.display='none';
+app.style.display='block';
+welcome.innerText='Xin chào: '+currentUser.name;
+adminMenu.style.display=currentUser.role==='admin'?'block':'none';
+empMenu.style.display=currentUser.role==='employee'?'block':'none';
+showPage(currentUser.role==='admin'?'home':'myovertime');
+refreshAll();
+}
+
+function logout(){location.reload();}
+
+function showPage(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+}
+
+function saveEmployee(){
+let obj={
+code:eCode.value,name:eName.value,dept:eDept.value,password:ePass.value
+};
+if(!obj.code||!obj.name)return;
+if(editEmp!==null) employees[editEmp]=obj;
+else employees.push(obj);
+editEmp=null;
+saveData(); renderEmployees(); fillSelect();
+eCode.value=eName.value=eDept.value=ePass.value='';
+}
+
+function renderEmployees(){
+employeeTable.innerHTML='';
+employees.forEach((e,i)=>{
+employeeTable.innerHTML+=`<tr>
+<td>${e.code}</td><td>${e.name}</td><td>${e.dept}</td>
+<td>
+<button onclick="editEmployee(${i})">Sửa</button>
+<button onclick="delEmployee(${i})">Xóa</button>
+</td></tr>`;
+});
+}
+
+function editEmployee(i){
+let e=employees[i];
+eCode.value=e.code;eName.value=e.name;eDept.value=e.dept;ePass.value=e.password;
+editEmp=i;
+}
+
+function delEmployee(i){
+if(confirm('Xóa?')){
+employees.splice(i,1);
+saveData();renderEmployees();fillSelect();
+}
+}
+
+function fillSelect(){
+otEmp.innerHTML='';
+employees.forEach(e=>{
+otEmp.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
+});
+}
+
+function saveOT(){
+let obj={
+emp:otEmp.value,date:otDate.value,start:otStart.value,end:otEnd.value,work:otWork.value,shift:otShift.value
+};
+if(editOT!==null)overtime[editOT]=obj;
+else overtime.push(obj);
+editOT=null;
+saveData();renderOT();updateStats();
+}
+
+function renderOT(){
+  otTable.innerHTML='';
+  overtime.forEach((o,i)=>{
+    otTable.innerHTML+=`<tr>
+      <td>${i+1}</td> <!-- STT -->
+      <td>${o.emp}</td>
+      <td>${o.shift||''}</td> <!-- Ca -->
+      <td>${o.date}</td>
+      <td>${o.start}</td>
+      <td>${o.end}</td>      
+      <td>${o.work}</td>
+      <td>
+        <button onclick="editOTRow(${i})">Sửa</button>
+        <button onclick="delOT(${i})">Xóa</button>
+      </td>
+    </tr>`;
+  });
+}
+
+
+function editOTRow(i){
+  let o=overtime[i];
+  otEmp.value=o.emp;
+  otDate.value=o.date;
+  otStart.value=o.start;
+  otEnd.value=o.end;
+  otWork.value=o.work;
+  otShift.value=o.shift||'Ca sáng';
+  editOT=i;
+}
+
+
+function delOT(i){
+if(confirm('Xóa lịch?')){
+overtime.splice(i,1);
+saveData();renderOT();updateStats();
+}
+}
+
+function renderMyOT(){
+let kw=(search.value||'').toLowerCase();
+let data=overtime.filter(x=>x.emp===currentUser.code);
+myTable.innerHTML='';
+data.filter(x=>x.date.includes(kw)||x.work.toLowerCase().includes(kw))
+.forEach(x=>{
+myTable.innerHTML+=`<tr>
+<td>${x.date}</td><td>${x.start}</td><td>${x.end}</td><td>${x.work}</td>
+</tr>`;
+});
+}
+
+function hours(){
+let t=0;
+overtime.forEach(x=>{
+let s=parseInt(x.start.split(':')[0])*60+parseInt(x.start.split(':')[1]);
+let e=parseInt(x.end.split(':')[0])*60+parseInt(x.end.split(':')[1]);
+t+=(e-s)/60;
+});
+return t;
+}
+
+function updateStats(){
+sEmp.innerText=employees.length;
+sOt.innerText=overtime.length;
+sHour.innerText=hours();
+rEmp.innerText=employees.length;
+rOt.innerText=overtime.length;
+rHour.innerText=hours();
+}
+
+function refreshAll(){
+renderEmployees();
+renderOT();
+fillSelect();
+updateStats();
+if(currentUser.role==='employee')renderMyOT();
+}
+// Xuất dữ liệu ra CSV
+function exportCSV(data, filename) {
+  if (!data || !data.length) {
+    alert("Không có dữ liệu để xuất!");
+    return;
+  }
+  const header = Object.keys(data[0]).join(",");
+  const rows = data.map(obj => Object.values(obj).map(v => `"${v}"`).join(","));
+  const csvContent = [header, ...rows].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+
+function exportEmployees() {
+  loadData();
+  exportCSV(employees, "nhanvien.csv");
+}
+
+function exportOT() {
+  loadData();
+  // Chuyển dữ liệu sang dạng có đủ cột STT và Ca
+  const data = overtime.map((o,i)=>({
+    STT: i+1,
+    emp: o.emp,
+    shift: o.shift || "",   // thêm Ca
+    date: o.date,
+    start: o.start,
+    end: o.end,
+    work: o.work
+  }));
+  exportCSV(data, "tangca.csv");
+}
+
+
+// Nhập dữ liệu từ CSV
+function parseCSV(text) {
+  const lines = text.trim().split("\n");
+  const headers = lines[0].split(",");
+  return lines.slice(1).map(line => {
+    const values = line.split(",");
+    let obj = {};
+    headers.forEach((h,i)=>{ obj[h.trim()] = values[i].replace(/(^"|"$)/g,""); });
+    return obj;
+  });
+}
+
+function importEmployees(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = parseCSV(e.target.result);
+    employees = data.map(d => ({
+      code:d.code, name:d.name, dept:d.dept, password:d.password
+    }));
+    saveData(); renderEmployees(); fillSelect(); updateStats();
+    alert("Đã nhập dữ liệu nhân viên từ CSV!");
+  };
+  reader.readAsText(file);
+}
+
+function importOT(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = parseCSV(e.target.result);
+    overtime = data.map(d => ({
+      emp:d.emp, date:d.date, start:d.start, end:d.end, work:d.work
+    }));
+    saveData(); renderOT(); updateStats();
+    alert("Đã nhập dữ liệu tăng ca từ CSV!");
+  };
+  reader.readAsText(file);
+}
+<!-- Thư viện PapaParse -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+<!-- Script đọc file nhansu.csv -->
+<script>
+Papa.parse("nhansu.csv", {
+  download: true,
+  header: true,
+  complete: function(results) {
+    employees = results.data;   // dữ liệu nhân viên từ CSV
+    renderEmployees();          // hàm hiển thị danh sách nhân viên
+  }
+});
+
+initData();
+loadData();
+</script>
+</body>
+</html>
+
+
+initData();
+loadData();
+</script>
+</body>
+</html>
