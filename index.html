@@ -331,16 +331,51 @@ saveData();renderOT();updateStats();
 }
 
 function renderMyOT(){
-let kw=(search.value||'').toLowerCase();
-let data=overtime.filter(x=>x.emp===currentUser.code);
-myTable.innerHTML='';
-data.filter(x=>x.date.includes(kw)||x.work.toLowerCase().includes(kw))
-.forEach(x=>{
-myTable.innerHTML+=`<tr>
-<td>${x.date}</td><td>${x.shift}</td><td>${x.start}</td><td>${x.end}</td><td>${x.work}</td>
-</tr>`;
-});
+  let kw = (search.value || '').toLowerCase();
+  let data = overtime.filter(x => x.emp === currentUser.code);
+  myTable.innerHTML = '';
+
+  data.filter(x => x.date.includes(kw) || x.work.toLowerCase().includes(kw))
+    .forEach(x => {
+      myTable.innerHTML += `<tr>
+        <td>${x.date}</td>
+        <td>${x.shift}</td>
+        <td>${x.start}</td>
+        <td>${x.end}</td>
+        <td>${x.work}</td>
+      </tr>`;
+    });
+
+  // Sau khi render xong, tính tổng giờ tăng ca
+  let rows = document.querySelectorAll("#myTable tr");
+  let totalHours = 0;
+
+  rows.forEach(row => {
+    let start = row.cells[2].innerText;
+    let end = row.cells[3].innerText;
+
+    if (start && end) {
+      let startTime = new Date("1970-01-01 " + start);
+      let endTime = new Date("1970-01-01 " + end);
+      let diff = (endTime - startTime) / (1000 * 60 * 60); // đổi ra giờ
+      totalHours += diff;
+    }
+  });
+
+  document.getElementById("overtimeHours").innerText =
+    "Bạn đã tăng ca: " + totalHours.toFixed(1) + " giờ";
 }
+	//function renderMyOT(){
+//let kw=(search.value||'').toLowerCase();
+//let data=overtime.filter(x=>x.emp===currentUser.code);
+//myTable.innerHTML='';
+//data.filter(x=>x.date.includes(kw)||x.work.toLowerCase().includes(kw))
+//.forEach(x=>{
+//myTable.innerHTML+=`<tr>
+//<td>${x.date}</td><td>${x.shift}</td><td>${x.start}</td><td>${x.end}</td><td>${x.work}</td>
+//</tr>`;
+//});
+//}
 
 function hours(){
 let t=0;
