@@ -519,5 +519,34 @@ function importOT(event) {
 initData();
 loadData();
 </script>
+	<script>
+    async function loadEmployees() {
+      const url = "https://github.com/Binhbaho/OT-SYSTEM/raw/main/nhansu.csv";
+      const response = await fetch(url);
+      const text = await response.text();
+
+      const rows = text.trim().split("\n");
+      const tableBody = document.getElementById("employeeTable");
+
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i].split(",");
+        const tr = document.createElement("tr");
+
+        cols.forEach(col => {
+          const td = document.createElement("td");
+          td.textContent = col;
+          tr.appendChild(td);
+        });
+
+        const actionTd = document.createElement("td");
+        actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
+        tr.appendChild(actionTd);
+
+        tableBody.appendChild(tr);
+      }
+    }
+
+    window.onload = loadEmployees;
+  </script>
 </body>
 </html>
