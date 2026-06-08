@@ -519,34 +519,39 @@ function importOT(event) {
 initData();
 loadData();
 </script>
-	<script>
-    async function loadEmployees() {
-      const url = "https://github.com/Binhbaho/OT-SYSTEM/raw/main/nhansu.csv";
-      const response = await fetch(url);
-      const text = await response.text();
+<script>
+async function loadEmployees() {
+  const url = "https://github.com/Binhbaho/OT-SYSTEM/raw/main/nhansu.csv";
+  const response = await fetch(url);
+  const text = await response.text();
 
-      const rows = text.trim().split("\n");
-      const tableBody = document.getElementById("employeeTable");
+  const rows = text.trim().split("\n");
+  const tableBody = document.getElementById("employeeTable");
 
-      for (let i = 1; i < rows.length; i++) {
-        const cols = rows[i].split(",");
-        const tr = document.createElement("tr");
+  // Đếm số nhân viên (trừ dòng tiêu đề)
+  const employeeCount = rows.length - 1;
+  document.getElementById("totalEmployees").textContent = employeeCount;
 
-        cols.forEach(col => {
-          const td = document.createElement("td");
-          td.textContent = col;
-          tr.appendChild(td);
-        });
+  // Hiển thị danh sách nhân viên
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i].split(",");
+    const tr = document.createElement("tr");
 
-        const actionTd = document.createElement("td");
-        actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
-        tr.appendChild(actionTd);
+    cols.forEach(col => {
+      const td = document.createElement("td");
+      td.textContent = col;
+      tr.appendChild(td);
+    });
 
-        tableBody.appendChild(tr);
-      }
-    }
+    const actionTd = document.createElement("td");
+    actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
+    tr.appendChild(actionTd);
 
-    window.onload = loadEmployees;
-  </script>
+    tableBody.appendChild(tr);
+  }
+}
+
+window.onload = loadEmployees;
+</script>
 </body>
 </html>
