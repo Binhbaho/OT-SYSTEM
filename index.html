@@ -154,7 +154,7 @@ tr:hover{background:#f1f5f9}
 <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
 <div class="table-wrap">
 <table>
-<thead><tr><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
+<thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
 <tbody id="myTable"></tbody>
 </table>
 </div>
@@ -180,9 +180,9 @@ localStorage.employees=JSON.stringify(employees);
 }
 if(!localStorage.overtime){
 overtime=[
-{emp:'NV001',date:'2026-06-10',start:'18:00',end:'21:00',work:'Kiểm hàng'},
-{emp:'NV002',date:'2026-06-11',start:'17:30',end:'20:30',work:'Làm báo cáo'},
-{emp:'NV003',date:'2026-06-12',start:'18:00',end:'22:00',work:'Xuất kho'}
+{emp:'NV001',shift:'1',date:'2026-06-10',start:'18:00',end:'21:00',work:'Kiểm hàng'},
+{emp:'NV002',shift:'1',date:'2026-06-11',start:'17:30',end:'20:30',work:'Làm báo cáo'},
+{emp:'NV003',shift:'1',date:'2026-06-12',start:'18:00',end:'22:00',work:'Xuất kho'}
 ];
 localStorage.overtime=JSON.stringify(overtime);
 }
@@ -332,7 +332,7 @@ myTable.innerHTML='';
 data.filter(x=>x.date.includes(kw)||x.work.toLowerCase().includes(kw))
 .forEach(x=>{
 myTable.innerHTML+=`<tr>
-<td>${x.date}</td><td>${x.start}</td><td>${x.end}</td><td>${x.work}</td>
+<td>${x.date}</td><td>${x.shift}</td><td>${x.start}</td><td>${x.end}</td><td>${x.work}</td>
 </tr>`;
 });
 }
@@ -435,7 +435,7 @@ function importOT(event) {
   reader.onload = e => {
     const data = parseCSV(e.target.result);
     overtime = data.map(d => ({
-      emp:d.emp, date:d.date, start:d.start, end:d.end, work:d.work
+      emp:d.emp,shift:d.shift, date:d.date, start:d.start, end:d.end, work:d.work
     }));
     saveData(); renderOT(); updateStats();
     alert("Đã nhập dữ liệu tăng ca từ CSV!");
