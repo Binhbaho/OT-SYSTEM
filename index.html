@@ -32,14 +32,31 @@ button:hover{background:#1e40af}
   box-shadow:0 3px 10px rgba(0,0,0,.08);
   margin-top:15px}
 	.list-wrap {
-  max-height:400px;   /* chỉ danh sách cuộn */
-  overflow-y:auto;
   background:#fff;
   padding:15px;
   border-radius:12px;
   box-shadow:0 3px 10px rgba(0,0,0,.08);
   margin-top:15px;
 }
+
+.list-wrap table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+.list-wrap thead, 
+.list-wrap tbody tr {
+  display:table;
+  width:100%;
+  table-layout:fixed;
+}
+
+.list-wrap tbody {
+  display:block;
+  max-height:300px;   /* chiều cao vùng cuộn */
+  overflow-y:auto;    /* bật cuộn dọc */
+}
+
 table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
