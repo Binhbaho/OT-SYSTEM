@@ -117,7 +117,8 @@ tr:hover{background:#f1f5f9}
 <button onclick="exportEmployees()">Xuất CSV Nhân viên</button>
 <input type="file" id="importEmpFile" accept=".csv" onchange="importEmployees(event)">
 
-<h2>Quản lý nhân viên</h2>
+//<h2>Quản lý nhân viên</h2>
+	<h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
 <div class="table-wrap">
 <div class="row">
 <input id="eCode" placeholder="Mã NV">
@@ -521,43 +522,47 @@ loadData();
 </script>
 <script>
 async function loadEmployees() {
-	try {
-  const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv"; // hoặc đường dẫn đầy đủ trên GitHub Pages
-  const response = await fetch(url);
-	if (!response.ok) throw new Error("Không tìm thấy file CSV");
-  const text = await response.text();
- console.log("CSV content:", text); // kiểm tra nội dung
-  const rows = text.trim().split("\n");
-  const tableBody = document.getElementById("employeeTable");
+  try {
+    const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv";
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Không tìm thấy file CSV");
+    const text = await response.text();
 
-  // Đếm số nhân viên (trừ dòng tiêu đề)
-  const employeeCount = rows.length - 1;
-  document.getElementById("totalEmployees").textContent = employeeCount;
+    const rows = text.trim().split("\n");
+    const tableBody = document.getElementById("employeeTable");
+    tableBody.innerHTML = ""; // xoá nội dung cũ
 
-  // Hiển thị danh sách nhân viên
-  for (let i = 1; i < rows.length; i++) {
-    const cols = rows[i].split(",");
-    const tr = document.createElement("tr");
+    // Nếu có tiêu đề CSV thì bỏ qua dòng đầu tiên
+    const hasHeader = rows[0].toLowerCase().includes("code") || rows[0].toLowerCase().includes("name");
+    const startIndex = hasHeader ? 1 : 0;
 
-    cols.forEach(col => {
-      const td = document.createElement("td");
-      td.textContent = col;
-      tr.appendChild(td);
-    });
+    const employeeCount = rows.length - startIndex;
+    document.getElementById("totalEmployees").textContent = employeeCount;
 
-    const actionTd = document.createElement("td");
-    actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
-    tr.appendChild(actionTd);
+    for (let i = startIndex; i < rows.length; i++) {
+      const cols = rows[i].split(",");
+      const tr = document.createElement("tr");
 
-    tableBody.appendChild(tr);
-  }}
- catch (err) {
+      cols.forEach(col => {
+        const td = document.createElement("td");
+        td.textContent = col;
+        tr.appendChild(td);
+      });
+
+      const actionTd = document.createElement("td");
+      actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
+      tr.appendChild(actionTd);
+
+      tableBody.appendChild(tr);
+    }
+  } catch (err) {
     console.error("Lỗi load CSV:", err);
-  }}
+  }
+}
 
 window.onload = loadEmployees;
-	
 </script>
+
 
 </body>
 </html>
