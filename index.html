@@ -521,10 +521,12 @@ loadData();
 </script>
 <script>
 async function loadEmployees() {
+	try {
   const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv"; // hoặc đường dẫn đầy đủ trên GitHub Pages
   const response = await fetch(url);
+	if (!response.ok) throw new Error("Không tìm thấy file CSV");
   const text = await response.text();
-
+ console.log("CSV content:", text); // kiểm tra nội dung
   const rows = text.trim().split("\n");
   const tableBody = document.getElementById("employeeTable");
 
@@ -548,10 +550,13 @@ async function loadEmployees() {
     tr.appendChild(actionTd);
 
     tableBody.appendChild(tr);
-  }
-}
+  }}
+ catch (err) {
+    console.error("Lỗi load CSV:", err);
+  }}
 
 window.onload = loadEmployees;
+	
 </script>
 
 </body>
