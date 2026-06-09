@@ -527,11 +527,12 @@ async function loadEmployees() {
     if (!response.ok) throw new Error("Không tìm thấy file CSV");
     const text = await response.text();
 
-    const rows = text.trim().split("\n");
-    console.log("CSV rows:", rows); // kiểm tra dữ liệu
+    // Tách dòng theo cả \r và \n
+    const rows = text.trim().split(/\r?\n/);
+    console.log("CSV rows:", rows);
 
     const tableBody = document.getElementById("employeeTable");
-    tableBody.innerHTML = ""; // xoá nội dung cũ
+    tableBody.innerHTML = "";
 
     // Kiểm tra có tiêu đề hay không
     const hasHeader = rows[0].toLowerCase().includes("code") || rows[0].toLowerCase().includes("name");
@@ -546,7 +547,7 @@ async function loadEmployees() {
 
       cols.forEach(col => {
         const td = document.createElement("td");
-        td.textContent = col;
+        td.textContent = col.trim();
         tr.appendChild(td);
       });
 
