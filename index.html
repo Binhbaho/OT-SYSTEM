@@ -117,8 +117,7 @@ tr:hover{background:#f1f5f9}
 <button onclick="exportEmployees()">Xuất CSV Nhân viên</button>
 <input type="file" id="importEmpFile" accept=".csv" onchange="importEmployees(event)">
 
-//<h2>Quản lý nhân viên</h2>
-	<h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
+<h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
 <div class="table-wrap">
 <div class="row">
 <input id="eCode" placeholder="Mã NV">
@@ -529,10 +528,12 @@ async function loadEmployees() {
     const text = await response.text();
 
     const rows = text.trim().split("\n");
+    console.log("CSV rows:", rows); // kiểm tra dữ liệu
+
     const tableBody = document.getElementById("employeeTable");
     tableBody.innerHTML = ""; // xoá nội dung cũ
 
-    // Nếu có tiêu đề CSV thì bỏ qua dòng đầu tiên
+    // Kiểm tra có tiêu đề hay không
     const hasHeader = rows[0].toLowerCase().includes("code") || rows[0].toLowerCase().includes("name");
     const startIndex = hasHeader ? 1 : 0;
 
