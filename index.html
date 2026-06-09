@@ -541,7 +541,7 @@ async function loadEmployeesFromCSV() {
     });
   }
 
-  // Lưu vào localStorage để dùng chung
+  // Ghi vào localStorage để loadData() dùng
   localStorage.employees = JSON.stringify(employees);
 
   renderEmployees();
@@ -569,8 +569,5 @@ function renderEmployees() {
 
 window.onload = loadEmployeesFromCSV;
 </script>
-
-
-
 </body>
 </html>
