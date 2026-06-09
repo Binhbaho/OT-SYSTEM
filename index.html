@@ -520,50 +520,56 @@ initData();
 loadData();
 </script>
 <script>
-async function loadEmployees() {
-  try {
-    const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv";
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Không tìm thấy file CSV");
-    const text = await response.text();
+async function loadEmployeesFromCSV() {
+  const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv";
+  const response = await fetch(url);
+  const text = await response.text();
 
-    // Tách dòng theo cả \r và \n
-    const rows = text.trim().split(/\r?\n/);
-    console.log("CSV rows:", rows);
+  const rows = text.trim().split(/\r?\n|\r/);
+  const hasHeader = rows[0].toLowerCase().includes("code");
+  const startIndex = hasHeader ? 1 : 0;
 
-    const tableBody = document.getElementById("employeeTable");
-    tableBody.innerHTML = "";
-
-    // Kiểm tra có tiêu đề hay không
-    const hasHeader = rows[0].toLowerCase().includes("code") || rows[0].toLowerCase().includes("name");
-    const startIndex = hasHeader ? 1 : 0;
-
-    const employeeCount = rows.length - startIndex;
-    document.getElementById("totalEmployees").textContent = employeeCount;
-
-    for (let i = startIndex; i < rows.length; i++) {
-      const cols = rows[i].split(",");
-      const tr = document.createElement("tr");
-
-      cols.forEach(col => {
-        const td = document.createElement("td");
-        td.textContent = col.trim();
-        tr.appendChild(td);
-      });
-
-      const actionTd = document.createElement("td");
-      actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
-      tr.appendChild(actionTd);
-
-      tableBody.appendChild(tr);
-    }
-  } catch (err) {
-    console.error("Lỗi load CSV:", err);
+  employees = [];
+  for (let i = startIndex; i < rows.length; i++) {
+    const cols = rows[i].split(",");
+    if (cols.length < 4) continue;
+    employees.push({
+      code: cols[0].trim(),
+      name: cols[1].trim(),
+      dept: cols[2].trim(),
+      password: cols[3].trim()
+    });
   }
+
+  // Lưu vào localStorage để dùng chung
+  localStorage.employees = JSON.stringify(employees);
+
+  renderEmployees();
 }
 
-window.onload = loadEmployees;
+function renderEmployees() {
+  const tableBody = document.getElementById("employeeTable");
+  tableBody.innerHTML = "";
+
+  employees.forEach(emp => {
+    const tr = document.createElement("tr");
+    [emp.code, emp.name, emp.dept].forEach(val => {
+      const td = document.createElement("td");
+      td.textContent = val;
+      tr.appendChild(td);
+    });
+    const actionTd = document.createElement("td");
+    actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
+    tr.appendChild(actionTd);
+    tableBody.appendChild(tr);
+  });
+
+  document.getElementById("totalEmployees").textContent = employees.length;
+}
+
+window.onload = loadEmployeesFromCSV;
 </script>
+
 
 
 </body>
