@@ -521,7 +521,7 @@ loadData();
 </script>
 <script>
 async function loadEmployees() {
-  const url = "https://github.com/Binhbaho/OT-SYSTEM/raw/main/nhansu.csv";
+  const url = "nhansu.csv"; // hoặc đường dẫn đầy đủ trên GitHub Pages
   const response = await fetch(url);
   const text = await response.text();
 
@@ -553,5 +553,6 @@ async function loadEmployees() {
 
 window.onload = loadEmployees;
 </script>
+
 </body>
 </html>
