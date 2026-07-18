@@ -296,7 +296,7 @@ db.collection("employees").onSnapshot(snapshot => {
     sel.innerHTML="";
     snapshot.forEach(doc=>{
       const e=doc.data();
-      sel.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
+      sel.innerHTML+=`<option value="${e.code}" data-name="${e.name}">${e.code} - ${e.name}</option>`;
     });
   }
 });
@@ -306,7 +306,7 @@ let editingOTId = null;
 
 async function saveOT(){
   const empCode = document.getElementById("otEmp").value;
-  const empName = document.getElementById("otEmp").selectedOptions[0].text.split(" - ")[1]; // lấy tên từ option
+  const empName = document.getElementById("otEmp").selectedOptions[0].dataset.name;
 
   const ot = {
     emp: empCode,
@@ -317,8 +317,6 @@ async function saveOT(){
     shift: document.getElementById("otShift").value,
     work: document.getElementById("otWork").value
   };
-  await db.collection("overtime").add(ot);
-  alert("Đã lưu lịch tăng ca");
 
   if(editingOTId){ // đang sửa
     await db.collection("overtime").doc(editingOTId).update(ot);
@@ -327,7 +325,7 @@ async function saveOT(){
   }else{ // thêm mới
     await db.collection("overtime").add(ot);
     alert("Đã lưu lịch tăng ca");
-  }};
+  }
 
   // reset form
   document.getElementById("otDate").value="";
@@ -368,6 +366,7 @@ db.collection("overtime").onSnapshot(snapshot => {
         <tr>
           <td>${i++}</td>
           <td>${o.emp}</td>
+          <td>${o.empName || ""}</td>
           <td>${o.shift}</td>
           <td>${o.date}</td>
           <td>${o.start}</td>
