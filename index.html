@@ -249,12 +249,17 @@ async function saveEmployee(){
   document.getElementById("ePass").value="";
 }
 
-function editEmployee(id, e){
-  document.getElementById("eCode").value = e.code;
-  document.getElementById("eName").value = e.name;
-  document.getElementById("eDept").value = e.dept;
-  document.getElementById("ePass").value = e.password;
-  editingEmployeeId = id;
+function editEmployee(id){
+  db.collection("employees").doc(id).get().then(doc=>{
+    if(doc.exists){
+      const e = doc.data();
+      document.getElementById("eCode").value = e.code;
+      document.getElementById("eName").value = e.name;
+      document.getElementById("eDept").value = e.dept;
+      document.getElementById("ePass").value = e.password;
+      editingEmployeeId = id;
+    }
+  });
 }
 
 async function deleteEmployee(id){
@@ -274,7 +279,7 @@ db.collection("employees").onSnapshot(snapshot => {
           <td>${e.name}</td>
           <td>${e.dept}</td>
           <td>
-            <button onclick="editEmployee('${doc.id}', ${JSON.stringify(e)})">Sửa</button>
+            <button onclick="editEmployee('${doc.id}')">Sửa</button>
             <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
           </td>
         </tr>`;
@@ -326,14 +331,19 @@ async function saveOT(){
   document.getElementById("otWork").value="";
 }
 
-function editOT(id, o){
-  document.getElementById("otEmp").value = o.emp;
-  document.getElementById("otDate").value = o.date;
-  document.getElementById("otStart").value = o.start;
-  document.getElementById("otEnd").value = o.end;
-  document.getElementById("otShift").value = o.shift;
-  document.getElementById("otWork").value = o.work;
-  editingOTId = id;
+function editOT(id){
+  db.collection("overtime").doc(id).get().then(doc=>{
+    if(doc.exists){
+      const o = doc.data();
+      document.getElementById("otEmp").value = o.emp;
+      document.getElementById("otDate").value = o.date;
+      document.getElementById("otStart").value = o.start;
+      document.getElementById("otEnd").value = o.end;
+      document.getElementById("otShift").value = o.shift;
+      document.getElementById("otWork").value = o.work;
+      editingOTId = id;
+    }
+  });
 }
 
 async function deleteOT(id){
@@ -358,7 +368,7 @@ db.collection("overtime").onSnapshot(snapshot => {
           <td>${o.end}</td>
           <td>${o.work}</td>
           <td>
-            <button onclick="editOT('${doc.id}', ${JSON.stringify(o)})">Sửa</button>
+            <button onclick="editOT('${doc.id}')">Sửa</button>
             <button onclick="deleteOT('${doc.id}')">Xóa</button>
           </td>
         </tr>`;
