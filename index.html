@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi">
-	<head>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hệ Thống Tra Cứu Tăng Ca</title>
+<title>Hệ Thống Tra Cứu Tăng Ca (Firebase)</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
 body{background:#f8fafc;color:#1e293b}
@@ -25,39 +30,8 @@ button:hover{background:#1e40af}
 .layout{display:flex;height:100%}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
 .stat{background:#fff;padding:20px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
-.table-wrap {
-  background:#fff;
-  padding:15px;
-  border-radius:12px;
-  box-shadow:0 3px 10px rgba(0,0,0,.08);
-  margin-top:15px}
-	.list-wrap {
-  background:#fff;
-  padding:15px;
-  border-radius:12px;
-  box-shadow:0 3px 10px rgba(0,0,0,.08);
-  margin-top:15px;
-}
-
-.list-wrap table {
-  width:100%;
-  border-collapse:collapse;
-}
-
-.list-wrap thead, 
-.list-wrap tbody tr {
-  display:table;
-  width:100%;
-  table-layout:fixed;
-}
-
-.list-wrap tbody {
-  display:block;
-  max-height:300px;   /* chiều cao vùng cuộn */
-  overflow-y:auto;    /* bật cuộn dọc */
-}
-
-table{width:100%;border-collapse:collapse}
+.table-wrap,.list-wrap{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08);margin-top:15px}
+.list-wrap table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
 .hidden{display:none}
@@ -99,481 +73,288 @@ tr:hover{background:#f1f5f9}
 </div>
 
 <div class="main">
-<div class="header">
-<span id="welcome"></span>
-</div>
+<div class="header"><span id="welcome"></span></div>
 <div class="content">
-
+<!-- Các trang con sẽ được viết tiếp ở đoạn 2 -->
+<!-- Các trang con -->
 <div id="home" class="page">
-<h2>Dashboard</h2>
-<div class="cards">
-<div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
-<div class="stat"><h3>Tổng nhân viên tăng ca</h3><h1 id="sOt">0</h1></div>
-<div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
-</div>
+  <h2>Dashboard</h2>
+  <div class="cards">
+    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
+    <div class="stat"><h3>Tổng nhân viên tăng ca</h3><h1 id="sOt">0</h1></div>
+    <div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
+  </div>
 </div>
 
 <div id="employees" class="page hidden">
-<button onclick="exportEmployees()">Xuất CSV Nhân viên</button>
-<input type="file" id="importEmpFile" accept=".csv" onchange="importEmployees(event)">
-
-<h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
-<div class="table-wrap">
-<div class="row">
-<input id="eCode" placeholder="Mã NV">
-<input id="eName" placeholder="Họ tên">
-<input id="eDept" placeholder="Bộ phận">
-<input id="ePass" placeholder="Mật khẩu">
-</div><br>
-<button onclick="saveEmployee()">Lưu</button>
-</div>
-
-<div class="list-wrap">
-<table>
-<thead><tr><th>Mã nhân viên</th><th>Họ và tên</th><th>Công đoạn</th><th>Thao tác</th></tr></thead>
-<tbody id="employeeTable"></tbody>
-</table>
-</div>
+  <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
+  <div class="table-wrap">
+    <div class="row">
+      <input id="eCode" placeholder="Mã NV">
+      <input id="eName" placeholder="Họ tên">
+      <input id="eDept" placeholder="Bộ phận">
+      <input id="ePass" placeholder="Mật khẩu">
+    </div><br>
+    <button onclick="saveEmployee()">Lưu</button>
+  </div>
+  <div class="list-wrap">
+    <table>
+      <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
+      <tbody id="employeeTable"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="overtime" class="page hidden">
-<button onclick="exportOT()">Xuất CSV Tăng ca</button>
-<input type="file" id="importOTFile" accept=".csv" onchange="importOT(event)">
-
-<h2>Quản lý tăng ca</h2>
-<div class="table-wrap">
-<div class="row">
-<select id="otEmp"></select>
-<input id="otDate" type="date">
-<input id="otStart" type="time">
-<input id="otEnd" type="time">
-<select id="otShift">
-    <option value="Ca 1">Ca 1</option>
-    <option value="Ca 2">Ca 2</option>
-    <option value="Ca 3">Ca 3</option>
-    <option value="Ca HC">Ca HC</option>
-  </select>
-</div>
-<textarea id="otWork" placeholder="Nội dung công việc"></textarea>
-<button onclick="saveOT()">Lưu</button>
-<table>
-<thead>
-  <tr>
-    <th>STT</th>
-    <th>NV</th>
-    <th>Ca</th>
-    <th>Ngày</th>
-    <th>Bắt đầu</th>
-    <th>Kết thúc</th>    
-    <th>Công việc</th>
-    <th>Thao tác</th>
-  </tr>
-</thead>
-
-<tbody id="otTable"></tbody>
-</table>
-</div>
+  <h2>Quản lý tăng ca</h2>
+  <div class="table-wrap">
+    <div class="row">
+      <select id="otEmp"></select>
+      <input id="otDate" type="date">
+      <input id="otStart" type="time">
+      <input id="otEnd" type="time">
+      <select id="otShift">
+        <option value="Ca 1">Ca 1</option>
+        <option value="Ca 2">Ca 2</option>
+        <option value="Ca 3">Ca 3</option>
+        <option value="Ca HC">Ca HC</option>
+      </select>
+    </div>
+    <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
+    <button onclick="saveOT()">Lưu</button>
+    <table>
+      <thead><tr><th>STT</th><th>NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
+      <tbody id="otTable"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="report" class="page hidden">
-<h2>Báo cáo</h2>
-<div class="cards">
-<div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
-<div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
-<div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
-</div>
+  <h2>Báo cáo</h2>
+  <div class="cards">
+    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
+    <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
+    <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
+  </div>
 </div>
 
 <div id="myovertime" class="page hidden">
-<h2>Lịch tăng ca của tôi</h2>
-<input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
-<div class="table-wrap">
-<table>
-<thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
-<tbody id="myTable"></tbody>
-</table>
+  <h2>Lịch tăng ca của tôi</h2>
+  <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
+      <tbody id="myTable"></tbody>
+    </table>
+  </div>
 </div>
-</div>
-	
+
 <div id="totalOvertime" class="page hidden">
   <h2>Tổng thời gian tăng ca</h2>
-
   <label>Từ ngày: <input type="date" id="fromDate"></label>
- <label>Đến ngày: <input type="date" id="toDate"></label>
+  <label>Đến ngày: <input type="date" id="toDate"></label>
   <button onclick="calculateOvertimeByRange()">Tính tổng giờ</button>
-
   <p id="overtimeHours">Bạn đã tăng ca: 0 giờ</p>
+</div>
 
-	
-	
-</div>
-</div>
-</div>
-</div>
+</div> <!-- content -->
+</div> <!-- main -->
+</div> <!-- layout -->
+</div> <!-- app -->
 
 <script>
-let employees=[], overtime=[];
-let editEmp=null, editOT=null, currentUser=null;
+// Firebase config (thay bằng thông tin project của bạn)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const appFirebase = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-function initData(){
-if(!localStorage.employees){
-employees=[
-{code:'NV001',name:'Nguyễn Văn An',dept:'Sản xuất',password:'1111'},
-{code:'NV002',name:'Trần Thị Bình',dept:'Kế toán',password:'2222'},
-{code:'NV003',name:'Lê Văn Cường',dept:'Kho',password:'3333'}
-];
-localStorage.employees=JSON.stringify(employees);
-}
-if(!localStorage.overtime){
-overtime=[
-{emp:'NV001',shift:'1',date:'2026-06-10',start:'18:00',end:'21:00',work:'Kiểm hàng'},
-{emp:'NV002',shift:'1',date:'2026-06-11',start:'17:30',end:'20:30',work:'Làm báo cáo'},
-{emp:'NV003',shift:'1',date:'2026-06-12',start:'18:00',end:'22:00',work:'Xuất kho'}
-];
-localStorage.overtime=JSON.stringify(overtime);
-}
-}
+let currentUser = null;
 
-function loadData(){
-employees=JSON.parse(localStorage.employees||'[]');
-overtime=JSON.parse(localStorage.overtime||'[]');
-}
-
-function saveData(){
-localStorage.employees=JSON.stringify(employees);
-localStorage.overtime=JSON.stringify(overtime);
-}
-
-function login(){
-let u=username.value.trim();
-let p=password.value.trim();
-
-if(u==='admin'&&p==='6180'){
-currentUser={role:'admin',name:'Quản trị viên'};
-startApp();
-return;
-}
-
-let emp=employees.find(x=>x.code===u&&x.password===p);
-if(emp){
-currentUser={role:'employee',...emp};
-startApp();
-}else alert('Sai thông tin đăng nhập');
+// Đăng nhập
+async function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+  if(u==="admin" && p==="admin"){
+    currentUser = {role:"admin",name:"Quản trị"};
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("welcome").innerText="Xin chào Admin";
+    showPage("home");
+    loadEmployees();
+    loadOT();
+  }else{
+    // kiểm tra trong employees
+    const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
+    if(!snap.empty){
+      const emp = snap.docs[0].data();
+      currentUser = {role:"emp",code:emp.code,name:emp.name};
+      document.getElementById("loginPage").style.display="none";
+      document.getElementById("app").style.display="block";
+      document.getElementById("welcome").innerText="Xin chào "+emp.name;
+      document.getElementById("adminMenu").style.display="none";
+      showPage("myovertime");
+      loadOT();
+    }else{
+      alert("Sai tài khoản hoặc mật khẩu");
+    }
+  }
 }
 
-function startApp(){
-loginPage.style.display='none';
-app.style.display='block';
-welcome.innerText='Xin chào: '+currentUser.name;
-adminMenu.style.display=currentUser.role==='admin'?'block':'none';
-empMenu.style.display=currentUser.role==='employee'?'block':'none';
-showPage(currentUser.role==='admin'?'home':'myovertime');
-refreshAll();
+// Đăng xuất
+function logout(){
+  location.reload();
 }
 
-function logout(){location.reload();}
-
+// Hiển thị trang
 function showPage(id){
-document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
-document.getElementById(id).classList.remove('hidden');
+  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
 }
 
-function saveEmployee(){
-let obj={
-code:eCode.value,name:eName.value,dept:eDept.value,password:ePass.value
-};
-if(!obj.code||!obj.name)return;
-if(editEmp!==null) employees[editEmp]=obj;
-else employees.push(obj);
-editEmp=null;
-saveData(); renderEmployees(); fillSelect(); updateStats();
-eCode.value=eName.value=eDept.value=ePass.value='';
+// Quản lý nhân viên
+async function saveEmployee(){
+  const emp = {
+    code: document.getElementById("eCode").value,
+    name: document.getElementById("eName").value,
+    dept: document.getElementById("eDept").value,
+    password: document.getElementById("ePass").value
+  };
+  await db.collection("employees").add(emp);
+  alert("Đã lưu nhân viên");
+  loadEmployees();
 }
 
-function renderEmployees(){
-employeeTable.innerHTML='';
-employees.forEach((e,i)=>{
-employeeTable.innerHTML+=`<tr>
-<td>${e.code}</td><td>${e.name}</td><td>${e.dept}</td>
-<td>
-<button onclick="editEmployee(${i})">Sửa</button>
-<button onclick="delEmployee(${i})">Xóa</button>
-</td></tr>`;
-});
-}
-
-function editEmployee(i){
-let e=employees[i];
-eCode.value=e.code;eName.value=e.name;eDept.value=e.dept;ePass.value=e.password;
-editEmp=i;
-}
-
-function delEmployee(i){
-if(confirm('Xóa?')){
-employees.splice(i,1);
-saveData();renderEmployees();fillSelect(); updateStats();
-}
-}
-
-function fillSelect(){
-otEmp.innerHTML='';
-employees.forEach(e=>{
-otEmp.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
-});
-}
-
-function saveOT(){
-let obj={
-emp:otEmp.value,date:otDate.value,start:otStart.value,end:otEnd.value,work:otWork.value,shift:otShift.value
-};
-if(editOT!==null)overtime[editOT]=obj;
-else overtime.push(obj);
-editOT=null;
-saveData();renderOT();updateStats();
-}
-
-function renderOT(){
-  otTable.innerHTML='';
-  overtime.forEach((o,i)=>{
-    otTable.innerHTML+=`<tr>
-      <td>${i+1}</td> <!-- STT -->
-      <td>${o.emp}</td>
-      <td>${o.shift||''}</td> <!-- Ca -->
-      <td>${o.date}</td>
-      <td>${o.start}</td>
-      <td>${o.end}</td>      
-      <td>${o.work}</td>
-      <td>
-        <button onclick="editOTRow(${i})">Sửa</button>
-        <button onclick="delOT(${i})">Xóa</button>
-      </td>
-    </tr>`;
+async function loadEmployees(){
+  const snap = await db.collection("employees").get();
+  const tbody = document.getElementById("employeeTable");
+  tbody.innerHTML="";
+  snap.forEach(doc=>{
+    const e = doc.data();
+    tbody.innerHTML+=`<tr><td>${e.code}</td><td>${e.name}</td><td>${e.dept}</td>
+    <td><button onclick="deleteEmployee('${doc.id}')">Xóa</button></td></tr>`;
+  });
+  document.getElementById("totalEmployees").innerText=snap.size;
+  // cập nhật select nhân viên cho overtime
+  const sel = document.getElementById("otEmp");
+  sel.innerHTML="";
+  snap.forEach(doc=>{
+    const e=doc.data();
+    sel.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
   });
 }
 
-
-function editOTRow(i){
-  let o=overtime[i];
-  otEmp.value=o.emp;
-  otDate.value=o.date;
-  otStart.value=o.start;
-  otEnd.value=o.end;
-  otWork.value=o.work;
-  otShift.value=o.shift||'Ca sáng';
-  editOT=i;
+async function deleteEmployee(id){
+  await db.collection("employees").doc(id).delete();
+  loadEmployees();
 }
 
-
-function delOT(i){
-if(confirm('Xóa lịch?')){
-overtime.splice(i,1);
-saveData();renderOT();updateStats();
+// Quản lý tăng ca
+async function saveOT(){
+  const ot = {
+    emp: document.getElementById("otEmp").value,
+    date: document.getElementById("otDate").value,
+    start: document.getElementById("otStart").value,
+    end: document.getElementById("otEnd").value,
+    shift: document.getElementById("otShift").value,
+    work: document.getElementById("otWork").value
+  };
+  await db.collection("overtime").add(ot);
+  alert("Đã lưu lịch tăng ca");
+  loadOT();
 }
-}
 
-function renderMyOT(){
-  let kw = (search.value || '').toLowerCase();
-  let data = overtime.filter(x => x.emp === currentUser.code);
-  myTable.innerHTML = '';
-
-  data.filter(x => x.date.includes(kw) || x.work.toLowerCase().includes(kw))
-    .forEach(x => {
-      myTable.innerHTML += `<tr>
-        <td>${x.date}</td><td>${x.shift}</td><td>${x.start}</td> <td>${x.end}</td>  <td>${x.work}</td>
+async function loadOT(){
+  const snap = await db.collection("overtime").get();
+  const tbody = document.getElementById("otTable");
+  if(tbody){
+    tbody.innerHTML="";
+    let i=1;
+    snap.forEach(doc=>{
+      const o=doc.data();
+      tbody.innerHTML+=`<tr>
+        <td>${i++}</td>
+        <td>${o.emp}</td>
+        <td>${o.shift}</td>
+        <td>${o.date}</td>
+        <td>${o.start}</td>
+        <td>${o.end}</td>
+        <td>${o.work}</td>
+        <td><button onclick="deleteOT('${doc.id}')">Xóa</button></td>
       </tr>`;
     });
-}
-  function calculateOvertimeByRange() {
-  let fromDate = document.getElementById("fromDate").value;
-  let toDate = document.getElementById("toDate").value;
-
-  let rows = document.querySelectorAll("#myTable tr");
-  let totalHours = 0;
-
-  rows.forEach(row => {
-    let date = row.cells[0].innerText; // Ngày dạng YYYY-MM-DD
-    let start = row.cells[2].innerText;
-    let end = row.cells[3].innerText;
-
-    if (start && end && date) {
-      // So sánh ngày trong khoảng
-      if ((!fromDate || date >= fromDate) && (!toDate || date <= toDate)) {
-        let startTime = new Date("1970-01-01 " + start);
-        let endTime = new Date("1970-01-01 " + end);
-        let diff = (endTime - startTime) / (1000 * 60 * 60); // đổi ra giờ
-        totalHours += diff;
+    document.getElementById("sOt").innerText=snap.size;
+    // tính tổng giờ
+    let total=0;
+    snap.forEach(doc=>{
+      const o=doc.data();
+      if(o.start && o.end){
+        const s=new Date("1970-01-01T"+o.start+":00");
+        const e=new Date("1970-01-01T"+o.end+":00");
+        total+=(e-s)/1000/3600;
       }
+    });
+    document.getElementById("sHour").innerText=total;
+    document.getElementById("rOt").innerText=snap.size;
+    document.getElementById("rHour").innerText=total;
+  }
+}
+
+async function deleteOT(id){
+  await db.collection("overtime").doc(id).delete();
+  loadOT();
+}
+
+// Hiển thị lịch tăng ca của nhân viên đăng nhập
+async function renderMyOT(){
+  const tbody=document.getElementById("myTable");
+  tbody.innerHTML="";
+  const search=document.getElementById("search").value.toLowerCase();
+  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
+  snap.forEach(doc=>{
+    const o=doc.data();
+    const text=(o.date+" "+o.work).toLowerCase();
+    if(text.includes(search)){
+      tbody.innerHTML+=`<tr>
+        <td>${o.date}</td>
+        <td>${o.shift}</td>
+        <td>${o.start}</td>
+        <td>${o.end}</td>
+        <td>${o.work}</td>
+      </tr>`;
     }
   });
-
-  document.getElementById("overtimeHours").innerText =
-    "Bạn đã tăng ca: " + totalHours.toFixed(1) + " giờ";
 }
 
-function hours(){
-let t=0;
-overtime.forEach(x=>{
-let s=parseInt(x.start.split(':')[0])*60+parseInt(x.start.split(':')[1]);
-let e=parseInt(x.end.split(':')[0])*60+parseInt(x.end.split(':')[1]);
-t+=(e-s)/60;
-});
-return t;
-}
-
-function updateStats(){
-sEmp.innerText=employees.length;
-sOt.innerText=overtime.length;
-sHour.innerText=hours();
-rEmp.innerText=employees.length;
-rOt.innerText=overtime.length;
-rHour.innerText=hours();
-}
-
-function refreshAll(){
-renderEmployees();
-renderOT();
-fillSelect();
-updateStats();
-if(currentUser.role==='employee')renderMyOT();
-}
-// Xuất dữ liệu ra CSV
-function exportCSV(data, filename) {
-  if (!data || !data.length) {
-    alert("Không có dữ liệu để xuất!");
-    return;
-  }
-  const header = Object.keys(data[0]).join(",");
-  const rows = data.map(obj => Object.values(obj).map(v => `"${v}"`).join(","));
-  const csvContent = [header, ...rows].join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-}
-
-function exportEmployees() {
-  loadData();
-  exportCSV(employees, "nhanvien.csv");
-}
-
-function exportOT() {
-  loadData();
-  // Chuyển dữ liệu sang dạng có đủ cột STT và Ca
-  const data = overtime.map((o,i)=>({
-    STT: i+1,
-    emp: o.emp,
-    shift: o.shift || "",   // thêm Ca
-    date: o.date,
-    start: o.start,
-    end: o.end,
-    work: o.work
-  }));
-  exportCSV(data, "tangca.csv");
-}
-
-
-// Nhập dữ liệu từ CSV
-function parseCSV(text) {
-  const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
-  return lines.slice(1).map(line => {
-    const values = line.split(",");
-    let obj = {};
-    headers.forEach((h,i)=>{ obj[h.trim()] = values[i].replace(/(^"|"$)/g,""); });
-    return obj;
+// Tính tổng giờ tăng ca theo khoảng ngày
+async function calculateOvertimeByRange(){
+  const from=document.getElementById("fromDate").value;
+  const to=document.getElementById("toDate").value;
+  let total=0;
+  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
+  snap.forEach(doc=>{
+    const o=doc.data();
+    if(o.date>=from && o.date<=to){
+      const s=new Date("1970-01-01T"+o.start+":00");
+      const e=new Date("1970-01-01T"+o.end+":00");
+      total+=(e-s)/1000/3600;
+    }
   });
+  document.getElementById("overtimeHours").innerText="Bạn đã tăng ca: "+total+" giờ";
 }
 
-function importEmployees(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = parseCSV(e.target.result);
-    employees = data.map(d => ({
-      code:d.code, name:d.name, dept:d.dept, password:d.password
-    }));
-    saveData(); renderEmployees(); fillSelect(); updateStats();
-    alert("Đã nhập dữ liệu nhân viên từ CSV!");
-  };
-  reader.readAsText(file);
+// Cập nhật dashboard
+async function updateDashboard(){
+  const empSnap=await db.collection("employees").get();
+  document.getElementById("sEmp").innerText=empSnap.size;
+  document.getElementById("rEmp").innerText=empSnap.size;
 }
-
-function importOT(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = parseCSV(e.target.result);
-    overtime = data.map(d => ({
-      emp:d.emp,shift:d.shift, date:d.date, start:d.start, end:d.end, work:d.work
-    }));
-    saveData(); renderOT(); updateStats();
-    alert("Đã nhập dữ liệu tăng ca từ CSV!");
-  };
-  reader.readAsText(file);
-}
-
-initData();
-loadData();
-</script>
-<script>
-async function loadEmployeesFromCSV() {
-  const url = "https://binhbaho.github.io/OT-SYSTEM/nhanvien.csv";
-  const response = await fetch(url);
-  const text = await response.text();
-
-  const rows = text.trim().split(/\r?\n|\r/);
-  const hasHeader = rows[0].toLowerCase().includes("code");
-  const startIndex = hasHeader ? 1 : 0;
-
-  employees = [];
-  for (let i = startIndex; i < rows.length; i++) {
-    const cols = rows[i].split(",");
-    if (cols.length < 4) continue;
-    employees.push({
-      code: cols[0].trim(),
-      name: cols[1].trim(),
-      dept: cols[2].trim(),
-      password: cols[3].trim()
-    });
-  }
-
-  // Ghi vào localStorage để loadData() dùng
-  localStorage.employees = JSON.stringify(employees);
-
-  renderEmployees();
-}
-
-function renderEmployeesFromCSV() {
-  const tableBody = document.getElementById("employeeTable");
-  tableBody.innerHTML = "";
-
-  employees.forEach((emp,i) => {
-    const tr = document.createElement("tr");
-    [emp.code, emp.name, emp.dept].forEach(val => {
-      const td = document.createElement("td");
-      td.textContent = val;
-      tr.appendChild(td);
-    });
-    const actionTd = document.createElement("td");
-    actionTd.innerHTML = `
-      <button onclick="editEmployee(${i})">Sửa</button>
-      <button onclick="delEmployee(${i})">Xóa</button>`;
-    tr.appendChild(actionTd);
-    tableBody.appendChild(tr);
-  });
-
-  document.getElementById("totalEmployees").textContent = employees.length;
-}
-window.onload = () => {
-  initData();
-  loadData();
-  refreshAll();
-};
-
 </script>
 </body>
 </html>
