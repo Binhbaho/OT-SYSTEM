@@ -286,7 +286,7 @@ if(!obj.code||!obj.name)return;
 if(editEmp!==null) employees[editEmp]=obj;
 else employees.push(obj);
 editEmp=null;
-saveData(); renderEmployees(); fillSelect();
+saveData(); renderEmployees(); fillSelect(); updateStats();
 eCode.value=eName.value=eDept.value=ePass.value='';
 }
 
@@ -311,7 +311,7 @@ editEmp=i;
 function delEmployee(i){
 if(confirm('Xóa?')){
 employees.splice(i,1);
-saveData();renderEmployees();fillSelect();
+saveData();renderEmployees();fillSelect(); updateStats();
 }
 }
 
