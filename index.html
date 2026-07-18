@@ -547,11 +547,11 @@ async function loadEmployeesFromCSV() {
   renderEmployees();
 }
 
-function renderEmployees() {
+function renderEmployeesFromCSV() {
   const tableBody = document.getElementById("employeeTable");
   tableBody.innerHTML = "";
 
-  employees.forEach(emp => {
+  employees.forEach((emp,i) => {
     const tr = document.createElement("tr");
     [emp.code, emp.name, emp.dept].forEach(val => {
       const td = document.createElement("td");
@@ -559,14 +559,15 @@ function renderEmployees() {
       tr.appendChild(td);
     });
     const actionTd = document.createElement("td");
-    actionTd.innerHTML = "<button>Sửa</button> <button>Xóa</button>";
+    actionTd.innerHTML = `
+      <button onclick="editEmployee(${i})">Sửa</button>
+      <button onclick="delEmployee(${i})">Xóa</button>`;
     tr.appendChild(actionTd);
     tableBody.appendChild(tr);
   });
 
   document.getElementById("totalEmployees").textContent = employees.length;
 }
-
 window.onload = loadEmployeesFromCSV;
 </script>
 </body>
