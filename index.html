@@ -216,7 +216,6 @@ async function login(){
 function logout(){
   location.reload();
 }
-
 // Hiển thị trang
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
@@ -233,8 +232,6 @@ async function saveEmployee(){
   };
   await db.collection("employees").add(emp);
   alert("Đã lưu nhân viên");
-  loadEmployees();
-  updateDashboard();
 }
 
 // Realtime Employees
@@ -253,23 +250,24 @@ db.collection("employees").onSnapshot(snapshot => {
         </tr>`;
     });
   }
+
   // Cập nhật Dashboard
   document.getElementById("sEmp").innerText = snapshot.size;
   document.getElementById("rEmp").innerText = snapshot.size;
-});
-  // cập nhật select nhân viên cho overtime
+
+  // Cập nhật select nhân viên cho overtime
   const sel = document.getElementById("otEmp");
-  sel.innerHTML="";
-  snap.forEach(doc=>{
-    const e=doc.data();
-    sel.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
-  });
-}
+  if(sel){
+    sel.innerHTML="";
+    snapshot.forEach(doc=>{
+      const e=doc.data();
+      sel.innerHTML+=`<option value="${e.code}">${e.code} - ${e.name}</option>`;
+    });
+  }
+});
 
 async function deleteEmployee(id){
   await db.collection("employees").doc(id).delete();
-  loadEmployees();
-  updateDashboard();
 }
 
 // Quản lý tăng ca
@@ -284,8 +282,6 @@ async function saveOT(){
   };
   await db.collection("overtime").add(ot);
   alert("Đã lưu lịch tăng ca");
-  loadOT();
-  updateDashboard();
 }
 
 // Realtime Overtime
@@ -330,8 +326,6 @@ db.collection("overtime").onSnapshot(snapshot => {
   
 async function deleteOT(id){
   await db.collection("overtime").doc(id).delete();
-  loadOT();
-  updateDashboard();
 }
 
 // Hiển thị lịch tăng ca của nhân viên đăng nhập
@@ -372,13 +366,7 @@ async function calculateOvertimeByRange(){
   document.getElementById("overtimeHours").innerText="Bạn đã tăng ca: "+total+" giờ";
 }
 
-// Cập nhật dashboard
-async function updateDashboard(){
-  const empSnap=await db.collection("employees").get();
-  document.getElementById("sEmp").innerText=empSnap.size;
-  document.getElementById("rEmp").innerText=empSnap.size;
-};
-  // Import nhân viên từ file CSV
+// Import nhân viên từ file CSV
 document.getElementById("fileEmployees").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   const text = await file.text();
@@ -404,7 +392,7 @@ document.getElementById("fileOT").addEventListener("change", async (event) => {
     await db.collection("overtime").add({emp,shift,date,start,end,work});
   }
   alert("Đã import lịch tăng ca từ file!");
-})
+});
 </script>
 </body>
 </html>
