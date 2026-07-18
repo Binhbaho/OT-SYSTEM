@@ -397,6 +397,21 @@ db.collection("overtime").onSnapshot(snapshot => {
   document.getElementById("sHour").innerText = total;
   document.getElementById("rHour").innerText = total;
 });
+  // Import tăng ca từ file CSV
+document.getElementById("fileOT").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  const text = await file.text();
+  const rows = text.split("\n").slice(1); // bỏ dòng tiêu đề
+
+  for(const row of rows){
+    if(!row.trim()) continue;
+    // CSV phải theo thứ tự: emp,empName,shift,date,start,end,work
+    const [emp,empName,shift,date,start,end,work] = row.split(",");
+    await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
+  }
+  alert("Đã import lịch tăng ca từ file!");
+});
+
 </script>
 </body>
 </html>
