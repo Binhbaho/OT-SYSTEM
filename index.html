@@ -87,6 +87,8 @@ tr:hover{background:#f1f5f9}
 
 <div id="employees" class="page hidden">
   <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
+  <h3>Import nhân viên từ file CSV</h3>
+<input type="file" id="fileEmployees" />
   <div class="table-wrap">
     <div class="row">
       <input id="eCode" placeholder="Mã NV">
@@ -106,6 +108,8 @@ tr:hover{background:#f1f5f9}
 
 <div id="overtime" class="page hidden">
   <h2>Quản lý tăng ca</h2>
+  <h3>Import tăng ca từ file CSV</h3>
+<input type="file" id="fileOT" />
   <div class="table-wrap">
     <div class="row">
       <select id="otEmp"></select>
@@ -233,17 +237,26 @@ async function saveEmployee(){
   updateDashboard();
 }
 
-async function loadEmployees(){
-  const snap = await db.collection("employees").get();
+// Realtime Employees
+db.collection("employees").onSnapshot(snapshot => {
   const tbody = document.getElementById("employeeTable");
-  tbody.innerHTML="";
-  snap.forEach(doc=>{
-    const e = doc.data();
-    tbody.innerHTML+=`<tr><td>${e.code}</td><td>${e.name}</td><td>${e.dept}</td>
-    <td><button onclick="deleteEmployee('${doc.id}')">Xóa</button></td></tr>`;
-  });
-  document.getElementById("totalEmployees").innerText=snap.size;
-  updateDashboard();
+  if(tbody){
+    tbody.innerHTML = "";
+    snapshot.forEach(doc => {
+      const e = doc.data();
+      tbody.innerHTML += `
+        <tr>
+          <td>${e.code}</td>
+          <td>${e.name}</td>
+          <td>${e.dept}</td>
+          <td><button onclick="deleteEmployee('${doc.id}')">Xóa</button></td>
+        </tr>`;
+    });
+  }
+  // Cập nhật Dashboard
+  document.getElementById("sEmp").innerText = snapshot.size;
+  document.getElementById("rEmp").innerText = snapshot.size;
+});
   // cập nhật select nhân viên cho overtime
   const sel = document.getElementById("otEmp");
   sel.innerHTML="";
@@ -275,43 +288,46 @@ async function saveOT(){
   updateDashboard();
 }
 
-async function loadOT(){
-  const snap = await db.collection("overtime").get();
+// Realtime Overtime
+db.collection("overtime").onSnapshot(snapshot => {
   const tbody = document.getElementById("otTable");
   if(tbody){
-    tbody.innerHTML="";
-    let i=1;
-    snap.forEach(doc=>{
-      const o=doc.data();
-      tbody.innerHTML+=`<tr>
-        <td>${i++}</td>
-        <td>${o.emp}</td>
-        <td>${o.shift}</td>
-        <td>${o.date}</td>
-        <td>${o.start}</td>
-        <td>${o.end}</td>
-        <td>${o.work}</td>
-        <td><button onclick="deleteOT('${doc.id}')">Xóa</button></td>
-      </tr>`;
+    tbody.innerHTML = "";
+    let i = 1;
+    snapshot.forEach(doc => {
+      const o = doc.data();
+      tbody.innerHTML += `
+        <tr>
+          <td>${i++}</td>
+          <td>${o.emp}</td>
+          <td>${o.shift}</td>
+          <td>${o.date}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+          <td><button onclick="deleteOT('${doc.id}')">Xóa</button></td>
+        </tr>`;
     });
-    document.getElementById("sOt").innerText=snap.size;
-    updateDashboard();
-    // tính tổng giờ
-    let total=0;
-    snap.forEach(doc=>{
-      const o=doc.data();
-      if(o.start && o.end){
-        const s=new Date("1970-01-01T"+o.start+":00");
-        const e=new Date("1970-01-01T"+o.end+":00");
-        total+=(e-s)/1000/3600;
-      }
-    });
-    document.getElementById("sHour").innerText=total;
-    document.getElementById("rOt").innerText=snap.size;
-    document.getElementById("rHour").innerText=total;
   }
-}
 
+  // Tính tổng giờ tăng ca
+  let total = 0;
+  snapshot.forEach(doc => {
+    const o = doc.data();
+    if(o.start && o.end){
+      const s = new Date("1970-01-01T"+o.start+":00");
+      const e = new Date("1970-01-01T"+o.end+":00");
+      total += (e-s)/1000/3600;
+    }
+  });
+
+  // Cập nhật Dashboard
+  document.getElementById("sOt").innerText = snapshot.size;
+  document.getElementById("rOt").innerText = snapshot.size;
+  document.getElementById("sHour").innerText = total;
+  document.getElementById("rHour").innerText = total;
+});
+  
 async function deleteOT(id){
   await db.collection("overtime").doc(id).delete();
   loadOT();
@@ -361,7 +377,34 @@ async function updateDashboard(){
   const empSnap=await db.collection("employees").get();
   document.getElementById("sEmp").innerText=empSnap.size;
   document.getElementById("rEmp").innerText=empSnap.size;
-}
+};
+  // Import nhân viên từ file CSV
+document.getElementById("fileEmployees").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  const text = await file.text();
+  const rows = text.split("\n").slice(1); // bỏ dòng tiêu đề
+
+  for(const row of rows){
+    if(!row.trim()) continue;
+    const [code,name,dept,password] = row.split(",");
+    await db.collection("employees").add({code,name,dept,password});
+  }
+  alert("Đã import nhân viên từ file!");
+});
+
+// Import tăng ca từ file CSV
+document.getElementById("fileOT").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  const text = await file.text();
+  const rows = text.split("\n").slice(1);
+
+  for(const row of rows){
+    if(!row.trim()) continue;
+    const [emp,shift,date,start,end,work] = row.split(",");
+    await db.collection("overtime").add({emp,shift,date,start,end,work});
+  }
+  alert("Đã import lịch tăng ca từ file!");
+})
 </script>
 </body>
 </html>
