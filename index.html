@@ -75,8 +75,7 @@ tr:hover{background:#f1f5f9}
 <div class="main">
 <div class="header"><span id="welcome"></span></div>
 <div class="content">
-<!-- Các trang con sẽ được viết tiếp ở đoạn 2 -->
-<!-- Các trang con -->
+
 <div id="home" class="page">
   <h2>Dashboard</h2>
   <div class="cards">
@@ -163,7 +162,7 @@ tr:hover{background:#f1f5f9}
 </div> <!-- app -->
 
 <script>
-// Firebase config (thay bằng thông tin project của bạn)
+// Firebase config (thay bằng thông tin project https://console.firebase.google.com/project/quan-ly-ot-e6fc6/firestore/databases/-default-/security/rules)
 const firebaseConfig = {
   apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
   authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
@@ -244,6 +243,7 @@ async function loadEmployees(){
     <td><button onclick="deleteEmployee('${doc.id}')">Xóa</button></td></tr>`;
   });
   document.getElementById("totalEmployees").innerText=snap.size;
+  updateDashboard();
   // cập nhật select nhân viên cho overtime
   const sel = document.getElementById("otEmp");
   sel.innerHTML="";
@@ -272,6 +272,7 @@ async function saveOT(){
   await db.collection("overtime").add(ot);
   alert("Đã lưu lịch tăng ca");
   loadOT();
+  updateDashboard();
 }
 
 async function loadOT(){
@@ -294,6 +295,7 @@ async function loadOT(){
       </tr>`;
     });
     document.getElementById("sOt").innerText=snap.size;
+    updateDashboard();
     // tính tổng giờ
     let total=0;
     snap.forEach(doc=>{
@@ -313,6 +315,7 @@ async function loadOT(){
 async function deleteOT(id){
   await db.collection("overtime").doc(id).delete();
   loadOT();
+  updateDashboard();
 }
 
 // Hiển thị lịch tăng ca của nhân viên đăng nhập
