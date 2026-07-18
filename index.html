@@ -165,12 +165,13 @@ tr:hover{background:#f1f5f9}
 <script>
 // Firebase config (thay bằng thông tin project của bạn)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
+  authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
+  projectId: "quan-ly-ot-e6fc6",
+  storageBucket: "quan-ly-ot-e6fc6.firebasestorage.app",
+  messagingSenderId: "552930745604",
+  appId: "1:552930745604:web:85bdf405543d90f5008451",
+  measurementId: "G-89YVZMFF8F"
 };
 const appFirebase = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -181,7 +182,7 @@ let currentUser = null;
 async function login(){
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
-  if(u==="admin" && p==="admin"){
+  if(u==="Admin" && p==="6180"){
     currentUser = {role:"admin",name:"Quản trị"};
     document.getElementById("loginPage").style.display="none";
     document.getElementById("app").style.display="block";
