@@ -190,6 +190,7 @@ async function login(){
     showPage("home");
     loadEmployees();
     loadOT();
+    updateDashboard();
   }else{
     // kiểm tra trong employees
     const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
@@ -255,6 +256,7 @@ async function loadEmployees(){
 async function deleteEmployee(id){
   await db.collection("employees").doc(id).delete();
   loadEmployees();
+  updateDashboard();
 }
 
 // Quản lý tăng ca
