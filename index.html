@@ -230,6 +230,7 @@ async function saveEmployee(){
   await db.collection("employees").add(emp);
   alert("Đã lưu nhân viên");
   loadEmployees();
+  updateDashboard();
 }
 
 async function loadEmployees(){
