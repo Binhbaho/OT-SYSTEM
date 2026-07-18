@@ -222,7 +222,9 @@ function showPage(id){
   document.getElementById(id).classList.remove("hidden");
 }
 
-// Quản lý nhân viên
+// ================== QUẢN LÝ NHÂN VIÊN ==================
+let editingEmployeeId = null;
+
 async function saveEmployee(){
   const emp = {
     code: document.getElementById("eCode").value,
@@ -230,8 +232,33 @@ async function saveEmployee(){
     dept: document.getElementById("eDept").value,
     password: document.getElementById("ePass").value
   };
-  await db.collection("employees").add(emp);
-  alert("Đã lưu nhân viên");
+
+  if(editingEmployeeId){ // đang sửa
+    await db.collection("employees").doc(editingEmployeeId).update(emp);
+    alert("Đã cập nhật nhân viên");
+    editingEmployeeId = null;
+  }else{ // thêm mới
+    await db.collection("employees").add(emp);
+    alert("Đã lưu nhân viên");
+  }
+
+  // reset form
+  document.getElementById("eCode").value="";
+  document.getElementById("eName").value="";
+  document.getElementById("eDept").value="";
+  document.getElementById("ePass").value="";
+}
+
+function editEmployee(id, e){
+  document.getElementById("eCode").value = e.code;
+  document.getElementById("eName").value = e.name;
+  document.getElementById("eDept").value = e.dept;
+  document.getElementById("ePass").value = e.password;
+  editingEmployeeId = id;
+}
+
+async function deleteEmployee(id){
+  await db.collection("employees").doc(id).delete();
 }
 
 // Realtime Employees
@@ -246,7 +273,10 @@ db.collection("employees").onSnapshot(snapshot => {
           <td>${e.code}</td>
           <td>${e.name}</td>
           <td>${e.dept}</td>
-          <td><button onclick="deleteEmployee('${doc.id}')">Xóa</button></td>
+          <td>
+            <button onclick="editEmployee('${doc.id}', ${JSON.stringify(e)})">Sửa</button>
+            <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
+          </td>
         </tr>`;
     });
   }
@@ -266,11 +296,9 @@ db.collection("employees").onSnapshot(snapshot => {
   }
 });
 
-async function deleteEmployee(id){
-  await db.collection("employees").doc(id).delete();
-}
+// ================== QUẢN LÝ TĂNG CA ==================
+let editingOTId = null;
 
-// Quản lý tăng ca
 async function saveOT(){
   const ot = {
     emp: document.getElementById("otEmp").value,
@@ -280,8 +308,36 @@ async function saveOT(){
     shift: document.getElementById("otShift").value,
     work: document.getElementById("otWork").value
   };
-  await db.collection("overtime").add(ot);
-  alert("Đã lưu lịch tăng ca");
+
+  if(editingOTId){ // đang sửa
+    await db.collection("overtime").doc(editingOTId).update(ot);
+    alert("Đã cập nhật lịch tăng ca");
+    editingOTId = null;
+  }else{ // thêm mới
+    await db.collection("overtime").add(ot);
+    alert("Đã lưu lịch tăng ca");
+  }
+
+  // reset form
+  document.getElementById("otDate").value="";
+  document.getElementById("otStart").value="";
+  document.getElementById("otEnd").value="";
+  document.getElementById("otShift").value="";
+  document.getElementById("otWork").value="";
+}
+
+function editOT(id, o){
+  document.getElementById("otEmp").value = o.emp;
+  document.getElementById("otDate").value = o.date;
+  document.getElementById("otStart").value = o.start;
+  document.getElementById("otEnd").value = o.end;
+  document.getElementById("otShift").value = o.shift;
+  document.getElementById("otWork").value = o.work;
+  editingOTId = id;
+}
+
+async function deleteOT(id){
+  await db.collection("overtime").doc(id).delete();
 }
 
 // Realtime Overtime
@@ -301,7 +357,10 @@ db.collection("overtime").onSnapshot(snapshot => {
           <td>${o.start}</td>
           <td>${o.end}</td>
           <td>${o.work}</td>
-          <td><button onclick="deleteOT('${doc.id}')">Xóa</button></td>
+          <td>
+            <button onclick="editOT('${doc.id}', ${JSON.stringify(o)})">Sửa</button>
+            <button onclick="deleteOT('${doc.id}')">Xóa</button>
+          </td>
         </tr>`;
     });
   }
@@ -322,76 +381,6 @@ db.collection("overtime").onSnapshot(snapshot => {
   document.getElementById("rOt").innerText = snapshot.size;
   document.getElementById("sHour").innerText = total;
   document.getElementById("rHour").innerText = total;
-});
-  
-async function deleteOT(id){
-  await db.collection("overtime").doc(id).delete();
-}
-
-// Hiển thị lịch tăng ca của nhân viên đăng nhập
-async function renderMyOT(){
-  const tbody=document.getElementById("myTable");
-  tbody.innerHTML="";
-  const search=document.getElementById("search").value.toLowerCase();
-  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
-  snap.forEach(doc=>{
-    const o=doc.data();
-    const text=(o.date+" "+o.work).toLowerCase();
-    if(text.includes(search)){
-      tbody.innerHTML+=`<tr>
-        <td>${o.date}</td>
-        <td>${o.shift}</td>
-        <td>${o.start}</td>
-        <td>${o.end}</td>
-        <td>${o.work}</td>
-      </tr>`;
-    }
-  });
-}
-
-// Tính tổng giờ tăng ca theo khoảng ngày
-async function calculateOvertimeByRange(){
-  const from=document.getElementById("fromDate").value;
-  const to=document.getElementById("toDate").value;
-  let total=0;
-  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
-  snap.forEach(doc=>{
-    const o=doc.data();
-    if(o.date>=from && o.date<=to){
-      const s=new Date("1970-01-01T"+o.start+":00");
-      const e=new Date("1970-01-01T"+o.end+":00");
-      total+=(e-s)/1000/3600;
-    }
-  });
-  document.getElementById("overtimeHours").innerText="Bạn đã tăng ca: "+total+" giờ";
-}
-
-// Import nhân viên từ file CSV
-document.getElementById("fileEmployees").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  const text = await file.text();
-  const rows = text.split("\n").slice(1); // bỏ dòng tiêu đề
-
-  for(const row of rows){
-    if(!row.trim()) continue;
-    const [code,name,dept,password] = row.split(",");
-    await db.collection("employees").add({code,name,dept,password});
-  }
-  alert("Đã import nhân viên từ file!");
-});
-
-// Import tăng ca từ file CSV
-document.getElementById("fileOT").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  const text = await file.text();
-  const rows = text.split("\n").slice(1);
-
-  for(const row of rows){
-    if(!row.trim()) continue;
-    const [emp,shift,date,start,end,work] = row.split(",");
-    await db.collection("overtime").add({emp,shift,date,start,end,work});
-  }
-  alert("Đã import lịch tăng ca từ file!");
 });
 </script>
 </body>
