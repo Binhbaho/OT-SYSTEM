@@ -319,7 +319,7 @@ async function saveOT(){
   };
   await db.collection("overtime").add(ot);
   alert("Đã lưu lịch tăng ca");
-};
+
   if(editingOTId){ // đang sửa
     await db.collection("overtime").doc(editingOTId).update(ot);
     alert("Đã cập nhật lịch tăng ca");
@@ -327,7 +327,7 @@ async function saveOT(){
   }else{ // thêm mới
     await db.collection("overtime").add(ot);
     alert("Đã lưu lịch tăng ca");
-  }
+  }};
 
   // reset form
   document.getElementById("otDate").value="";
