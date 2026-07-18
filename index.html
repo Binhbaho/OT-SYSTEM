@@ -568,7 +568,12 @@ function renderEmployeesFromCSV() {
 
   document.getElementById("totalEmployees").textContent = employees.length;
 }
-window.onload = loadEmployeesFromCSV;
+window.onload = () => {
+  initData();
+  loadData();
+  refreshAll();
+};
+
 </script>
 </body>
 </html>
