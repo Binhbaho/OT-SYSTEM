@@ -112,7 +112,10 @@ tr:hover{background:#f1f5f9}
 <input type="file" id="fileOT" />
   <div class="table-wrap">
     <div class="row">
-      <select id="otEmp"></select>
+      <select id="otEmp">
+  <option value="" disabled selected>--Chọn nhân viên--</option>
+  <!-- Các option nhân viên sẽ được thêm ở đây bằng JS -->
+</select>
       <input id="otDate" type="date">
       <input id="otStart" type="time">
       <input id="otEnd" type="time">
@@ -328,6 +331,7 @@ async function saveOT(){
   }
 
   // reset form
+  document.getElementById("otEmp").value = "";
   document.getElementById("otDate").value="";
   document.getElementById("otStart").value="";
   document.getElementById("otEnd").value="";
