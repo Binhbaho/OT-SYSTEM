@@ -168,7 +168,7 @@ tr:hover{background:#f1f5f9}
 </div> <!-- app -->
 
 <script>
-// Firebase config (thay bằng thông tin project https://console.firebase.google.com/project/quan-ly-ot-e6fc6/firestore/databases/-default-/security/rules)
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
   authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
@@ -207,7 +207,7 @@ async function login(){
       document.getElementById("welcome").innerText="Xin chào "+emp.name;
       document.getElementById("adminMenu").style.display="none";
       showPage("myovertime");
-      loadOT();
+      renderMyOT();
     }else{
       alert("Sai tài khoản hoặc mật khẩu");
     }
@@ -218,6 +218,7 @@ async function login(){
 function logout(){
   location.reload();
 }
+
 // Hiển thị trang
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
@@ -295,7 +296,7 @@ db.collection("employees").onSnapshot(snapshot => {
   // Cập nhật select nhân viên cho overtime
   const sel = document.getElementById("otEmp");
   if(sel){
-    sel.innerHTML="";
+    sel.innerHTML='<option value="" disabled selected>--Chọn nhân viên--</option>';
     snapshot.forEach(doc=>{
       const e=doc.data();
       sel.innerHTML+=`<option value="${e.code}" data-name="${e.name}">${e.code} - ${e.name}</option>`;
@@ -357,63 +358,99 @@ async function deleteOT(id){
   await db.collection("overtime").doc(id).delete();
 }
 
-// Realtime Overtime
-db.collection("overtime").onSnapshot(snapshot => {
-  const tbody = document.getElementById("otTable");
-  if(tbody){
-    tbody.innerHTML = "";
-    let i = 1;
+// Realtime Overtime cho admin
+function loadOT(){
+  db.collection("overtime").onSnapshot(snapshot => {
+    const tbody = document.getElementById("otTable");
+    if(tbody){
+      tbody.innerHTML = "";
+      let i = 1;
+      snapshot.forEach(doc => {
+        const o = doc.data();
+        tbody.innerHTML += `
+          <tr>
+            <td>${i++}</td>
+            <td>${o.emp}</td>
+            <td>${o.empName || ""}</td>
+            <td>${o.shift}</td>
+            <td>${o.date}</td>
+            <td>${o.start}</td>
+            <td>${o.end}</td>
+            <td>${o.work}</td>
+            <td>
+              <button onclick="editOT('${doc.id}')">Sửa</button>
+              <button onclick="deleteOT('${doc.id}')">Xóa</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    // Tính tổng giờ tăng ca toàn hệ thống
+    let total = 0;
     snapshot.forEach(doc => {
       const o = doc.data();
-      tbody.innerHTML += `
-        <tr>
-          <td>${i++}</td>
-          <td>${o.emp}</td>
-          <td>${o.empName || ""}</td>
-          <td>${o.shift}</td>
-          <td>${o.date}</td>
-          <td>${o.start}</td>
-          <td>${o.end}</td>
-          <td>${o.work}</td>
-          <td>
-            <button onclick="editOT('${doc.id}')">Sửa</button>
-            <button onclick="deleteOT('${doc.id}')">Xóa</button>
-          </td>
-        </tr>`;
+      if(o.start && o.end){
+        const s = new Date("1970-01-01T"+o.start+":00");
+        const e = new Date("1970-01-01T"+o.end+":00");
+        total += (e-s)/1000/3600;
+      }
     });
-  }
-const currentEmp = loggedInEmpCode; // lấy từ session đăng nhập
 
-db.collection("overtime").where("emp","==",currentEmp).onSnapshot(snapshot => {
+    // Cập nhật Dashboard
+    document.getElementById("sOt").innerText = snapshot.size;
+    document.getElementById("rOt").innerText = snapshot.size;
+    document.getElementById("sHour").innerText = total;
+    document.getElementById("rHour").innerText = total;
+  });
+}
+
+// Lịch tăng ca của nhân viên
+function renderMyOT(){
+  if(!currentUser || currentUser.role!=="emp") return;
+  db.collection("overtime")
+    .where("emp","==",currentUser.code)
+    .onSnapshot(snapshot=>{
+      const tbody = document.getElementById("myTable");
+      if(!tbody) return;
+      tbody.innerHTML = "";
+      snapshot.forEach(doc=>{
+        const o = doc.data();
+        tbody.innerHTML += `
+          <tr>
+            <td>${o.date}</td>
+            <td>${o.shift}</td>
+            <td>${o.start}</td>
+            <td>${o.end}</td>
+            <td>${o.work}</td>
+          </tr>`;
+      });
+    });
+}
+
+// Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên
+async function calculateOvertimeByRange(){
+  if(!currentUser || currentUser.role!=="emp") return;
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  if(!from || !to){ alert("Chọn khoảng ngày"); return; }
+
+  const snap = await db.collection("overtime")
+    .where("emp","==",currentUser.code)
+    .get();
+
   let total = 0;
-  snapshot.forEach(doc => {
+  snap.forEach(doc=>{
     const o = doc.data();
-    if(o.start && o.end){
+    if(o.date && o.date >= from && o.date <= to && o.start && o.end){
       const s = new Date("1970-01-01T"+o.start+":00");
       const e = new Date("1970-01-01T"+o.end+":00");
       total += (e-s)/1000/3600;
     }
   });
-  document.getElementById("personalOtHour").innerText = total;
-});
-  // Tính tổng giờ tăng ca
-  //let total = 0;
-  //snapshot.forEach(doc => {
-    //const o = doc.data();
-    //if(o.start && o.end){
-     // const s = new Date("1970-01-01T"+o.start+":00");
-      //const e = new Date("1970-01-01T"+o.end+":00");
-      //total += (e-s)/1000/3600;
-   // }
-  //});
+  document.getElementById("overtimeHours").innerText = "Bạn đã tăng ca: "+total+" giờ";
+}
 
-  // Cập nhật Dashboard
-  document.getElementById("sOt").innerText = snapshot.size;
-  document.getElementById("rOt").innerText = snapshot.size;
-  document.getElementById("sHour").innerText = total;
-  document.getElementById("rHour").innerText = total;
-});
-  // Import tăng ca từ file CSV
+// Import tăng ca từ file CSV
 document.getElementById("fileOT").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   const text = await file.text();
@@ -427,7 +464,6 @@ document.getElementById("fileOT").addEventListener("change", async (event) => {
   }
   alert("Đã import lịch tăng ca từ file!");
 });
-
 </script>
 </body>
 </html>
