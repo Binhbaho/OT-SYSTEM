@@ -407,6 +407,8 @@ function loadOT(){
 // Lịch tăng ca của nhân viên
 function renderMyOT(){
   if(!currentUser || currentUser.role!=="emp") return;
+  const keyword = document.getElementById("search").value.toLowerCase();
+
   db.collection("overtime")
     .where("emp","==",currentUser.code)
     .onSnapshot(snapshot=>{
@@ -415,14 +417,19 @@ function renderMyOT(){
       tbody.innerHTML = "";
       snapshot.forEach(doc=>{
         const o = doc.data();
-        tbody.innerHTML += `
-          <tr>
-            <td>${o.date}</td>
-            <td>${o.shift}</td>
-            <td>${o.start}</td>
-            <td>${o.end}</td>
-            <td>${o.work}</td>
-          </tr>`;
+        // lọc theo ngày hoặc công việc
+        const matchDate = o.date && o.date.toLowerCase().includes(keyword);
+        const matchWork = o.work && o.work.toLowerCase().includes(keyword);
+        if(!keyword || matchDate || matchWork){
+          tbody.innerHTML += `
+            <tr>
+              <td>${o.date}</td>
+              <td>${o.shift}</td>
+              <td>${o.start}</td>
+              <td>${o.end}</td>
+              <td>${o.work}</td>
+            </tr>`;
+        }
       });
     });
 }
