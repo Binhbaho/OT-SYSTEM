@@ -362,28 +362,29 @@ async function deleteOT(id){
 function loadOT(){
   db.collection("overtime").onSnapshot(snapshot => {
     const tbody = document.getElementById("otTable");
-    if(tbody){
-      tbody.innerHTML = "";
-      let i = 1;
-      snapshot.forEach(doc => {
-        const o = doc.data();
-        tbody.innerHTML += `
-          <tr>
-            <td>${i++}</td>
-            <td>${o.emp}</td>
-            <td>${o.empName || ""}</td>
-            <td>${o.shift}</td>
-            <td>${o.date}</td>
-            <td>${o.start}</td>
-            <td>${o.end}</td>
-            <td>${o.work}</td>
-            <td>
-              <button onclick="editOT('${doc.id}')">Sửa</button>
-              <button onclick="deleteOT('${doc.id}')">Xóa</button>
-            </td>
-          </tr>`;
-      });
-    }
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    let i = 1;
+    snapshot.forEach(doc => {
+      const o = doc.data();
+      tbody.innerHTML += `
+        <tr>
+          <td>${i++}</td>
+          <td>${o.emp}</td>
+          <td>${o.empName || ""}</td>
+          <td>${o.shift}</td>
+          <td>${o.date}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+          <td>
+            <button onclick="editOT('${doc.id}')">Sửa</button>
+            <button onclick="deleteOT('${doc.id}')">Xóa</button>
+          </td>
+        </tr>`;
+    });
+  });
+}
 
     // Tính tổng giờ tăng ca toàn hệ thống
     let total = 0;
