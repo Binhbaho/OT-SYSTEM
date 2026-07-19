@@ -382,8 +382,9 @@ db.collection("overtime").onSnapshot(snapshot => {
         </tr>`;
     });
   }
+const currentEmp = loggedInEmpCode; // lấy từ session đăng nhập
 
-  // Tính tổng giờ tăng ca
+db.collection("overtime").where("emp","==",currentEmp).onSnapshot(snapshot => {
   let total = 0;
   snapshot.forEach(doc => {
     const o = doc.data();
@@ -393,6 +394,18 @@ db.collection("overtime").onSnapshot(snapshot => {
       total += (e-s)/1000/3600;
     }
   });
+  document.getElementById("personalOtHour").innerText = total;
+});
+  // Tính tổng giờ tăng ca
+  //let total = 0;
+  //snapshot.forEach(doc => {
+    //const o = doc.data();
+    //if(o.start && o.end){
+     // const s = new Date("1970-01-01T"+o.start+":00");
+      //const e = new Date("1970-01-01T"+o.end+":00");
+      //total += (e-s)/1000/3600;
+   // }
+  //});
 
   // Cập nhật Dashboard
   document.getElementById("sOt").innerText = snapshot.size;
