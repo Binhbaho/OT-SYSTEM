@@ -168,7 +168,7 @@ tr:hover{background:#f1f5f9}
 </div> <!-- app -->
 
 <script>
-// Firebase config
+// ================== Firebase config ==================
 const firebaseConfig = {
   apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
   authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
@@ -183,7 +183,7 @@ const db = firebase.firestore();
 
 let currentUser = null;
 
-// Đăng nhập
+// ================== Đăng nhập ==================
 async function login(){
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
@@ -216,12 +216,12 @@ async function login(){
   }
 }
 
-// Đăng xuất
+// ================== Đăng xuất ==================
 function logout(){
   location.reload();
 }
 
-// Hiển thị trang
+// ================== Hiển thị trang ==================
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
@@ -232,10 +232,10 @@ let editingEmployeeId = null;
 
 async function saveEmployee(){
   const emp = {
-    code: document.getElementById("eCode").value,
-    name: document.getElementById("eName").value,
-    dept: document.getElementById("eDept").value,
-    password: document.getElementById("ePass").value
+    code: document.getElementById("eCode").value.trim(),
+    name: document.getElementById("eName").value.trim(),
+    dept: document.getElementById("eDept").value.trim(),
+    password: document.getElementById("ePass").value.trim()
   };
 
   if(editingEmployeeId){ // đang sửa
@@ -311,7 +311,7 @@ let editingOTId = null;
 
 async function saveOT(){
   const empCode = document.getElementById("otEmp").value;
-  const empName = document.getElementById("otEmp").selectedOptions[0].dataset.name;
+  const empName = document.getElementById("otEmp").selectedOptions[0]?.dataset.name || "";
 
   const ot = {
     emp: empCode,
@@ -320,7 +320,7 @@ async function saveOT(){
     start: document.getElementById("otStart").value,
     end: document.getElementById("otEnd").value,
     shift: document.getElementById("otShift").value,
-    work: document.getElementById("otWork").value
+    work: document.getElementById("otWork").value.trim()
   };
 
   if(editingOTId){ // đang sửa
@@ -337,7 +337,7 @@ async function saveOT(){
   document.getElementById("otDate").value="";
   document.getElementById("otStart").value="";
   document.getElementById("otEnd").value="";
-  document.getElementById("otShift").value="";
+  document.getElementById("otShift").value="Ca 1";
   document.getElementById("otWork").value="";
 }
 
@@ -398,7 +398,7 @@ function loadOT(){
       }
     });
 
-    // Cập nhật Dashboard
+        // Cập nhật Dashboard
     document.getElementById("sOt").innerText = snapshot.size;
     document.getElementById("rOt").innerText = snapshot.size;
     document.getElementById("sHour").innerText = total;
@@ -406,7 +406,7 @@ function loadOT(){
   });
 }
 
-// Lịch tăng ca của nhân viên
+// ================== Lịch tăng ca của nhân viên ==================
 function renderMyOT(){
   if(!currentUser || currentUser.role!=="emp") return;
   const keyword = document.getElementById("search").value.toLowerCase();
@@ -436,7 +436,7 @@ function renderMyOT(){
     });
 }
 
-// Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên
+// ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
 async function calculateOvertimeByRange(){
   if(!currentUser || currentUser.role!=="emp") return;
   const from = document.getElementById("fromDate").value;
@@ -459,17 +459,20 @@ async function calculateOvertimeByRange(){
   document.getElementById("overtimeHours").innerText = "Bạn đã tăng ca: "+total+" giờ";
 }
 
-// Import tăng ca từ file CSV
+// ================== Import tăng ca từ file CSV ==================
 document.getElementById("fileOT").addEventListener("change", async (event) => {
   const file = event.target.files[0];
+  if(!file){ return; }
   const text = await file.text();
   const rows = text.split("\n").slice(1); // bỏ dòng tiêu đề
 
   for(const row of rows){
     if(!row.trim()) continue;
     // CSV phải theo thứ tự: emp,empName,shift,date,start,end,work
-    const [emp,empName,shift,date,start,end,work] = row.split(",");
-    await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
+    const [emp,empName,shift,date,start,end,work] = row.split(",").map(x=>x.trim());
+    if(emp && date){ // chỉ thêm nếu có mã NV và ngày
+      await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
+    }
   }
   alert("Đã import lịch tăng ca từ file!");
 });
