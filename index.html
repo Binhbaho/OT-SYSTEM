@@ -192,6 +192,8 @@ async function login(){
     document.getElementById("loginPage").style.display="none";
     document.getElementById("app").style.display="block";
     document.getElementById("welcome").innerText="Xin chào Admin";
+    // Ẩn menu nhân viên khi là admin
+    document.getElementById("empMenu").style.display="none";
     showPage("home");
     loadEmployees();
     loadOT();
