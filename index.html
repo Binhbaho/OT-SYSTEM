@@ -42,6 +42,202 @@ tr:hover{background:#f1f5f9}
 .row{grid-template-columns:1fr}
 }
 </style>
+
+</head>
+<body>
+
+<div id="loginPage" class="login">
+  <div class="card">
+    <div class="logo">OT</div>
+    <h1>HỆ THỐNG TRA CỨU TĂNG CA</h1>
+    <input id="username" placeholder="Tên đăng nhập">
+    <input id="password" type="password" placeholder="Mật khẩu">
+    <button onclick="login()" style="width:100%">Đăng nhập</button>
+  </div>
+</div>
+
+<div id="app" class="app">
+  <div class="layout">
+    <div class="sidebar">
+      <h2>MENU</h2>
+      <div id="adminMenu">
+        <a href="#" onclick="showPage('home')">Trang chủ</a>
+        <a href="#" onclick="showPage('employees')">Quản lý nhân viên</a>
+        <a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
+        <a href="#" onclick="showPage('report')">Báo cáo</a>
+      </div>
+      <div id="empMenu">
+        <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
+        <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
+      </div>
+      <a href="#" onclick="logout()">Đăng xuất</a>
+    </div>
+
+    <div class="main">
+      <div class="header"><span id="welcome"></span></div>
+      <div class="content">
+
+        <!-- Dashboard -->
+        <div id="home" class="page">
+          <h2>Dashboard</h2>
+          <div class="cards">
+            <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
+            <div class="stat"><h3>Tổng nhân viên tăng ca</h3><h1 id="sOt">0</h1></div>
+            <div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
+          </div>
+        </div>
+
+        <!-- Employees -->
+        <div id="employees" class="page hidden">
+          <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
+          <input type="file" id="fileEmployees" />
+          <div class="table-wrap">
+            <div class="row">
+              <input id="eCode" placeholder="Mã NV">
+              <input id="eName" placeholder="Họ tên">
+              <input id="eDept" placeholder="Bộ phận">
+              <input id="ePass" placeholder="Mật khẩu">
+            </div><br>
+            <button onclick="saveEmployee()">Lưu</button>
+          </div>
+          <div class="list-wrap">
+            <table>
+              <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
+              <tbody id="employeeTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Overtime (Admin) -->
+        <div id="overtime" class="page hidden">
+          <h2>Quản lý tăng ca</h2>
+          <input type="file" id="fileOT" />
+          <div class="table-wrap">
+            <div class="row">
+              <select id="otEmp"><option value="" disabled selected>--Chọn nhân viên--</option></select>
+              <input id="otDate" type="date">
+              <input id="otStart" type="time">
+              <input id="otEnd" type="time">
+              <select id="otShift"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+            </div>
+            <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
+            <button onclick="saveOT()">Lưu</button>
+            <table>
+              <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
+              <tbody id="otTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Report -->
+        <div id="report" class="page hidden">
+          <h2>Báo cáo</h2>
+          <div class="cards">
+            <div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
+            <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
+            <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
+          </div>
+        </div>
+
+        <!-- MyOvertime (Employee) -->
+        <div id="myovertime" class="page hidden">
+          <h2>Lịch tăng ca của tôi</h2>
+          <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
+              <tbody id="myTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TotalOvertime -->
+        <div id="totalOvertime" class="page hidden">
+          <h2>Tổng thời gian tăng ca</h2>
+          <label>Từ ngày: <input type="date" id="fromDate"></label>
+          <label>Đến ngày: <input type="date" id="toDate"></label>
+          <button onclick="calculateOvertimeByRange()">Tính tổng giờ</button>
+          <p id="overtimeHours">Bạn đã tăng ca: 0 giờ</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================== Firebase config ==================
+const firebaseConfig = {
+  apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
+  authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
+  projectId: "quan-ly-ot-e6fc6",
+  storageBucket: "quan-ly-ot-e6fc6.firebasestorage.app",
+  messagingSenderId: "552930745604",
+  appId: "1:552930745604:web:85bdf405543d90f5008451",
+  measurementId: "G-89YVZMFF8F"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let currentUser = null;
+
+// ================== Đăng nhập ==================
+async function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  if(u==="Admin" && p==="6180"){
+    currentUser = {role:"admin",name:"Quản trị"};
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("welcome").innerText="Xin chào Admin";
+    document.getElementById("empMenu").style.display="none";
+    showPage("overtime");
+    loadEmployees();
+    loadOT();
+  }else{
+    const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
+    if(!snap.empty){
+      const emp = snap.docs[0].data();
+      currentUser = {role:"emp",code:emp.code,name:emp.name};
+      document.getElementById("loginPage").style.display="none";
+      document.getElementById("app").style.display="block";
+      document.getElementById("welcome").innerText="Xin chào "+emp.name;
+      document.getElementById("adminMenu").style.display="
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{background:#f8fafc;color:#1e293b}
+.login{display:flex;align-items:center;justify-content:center;height:100vh}
+.card{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.1);width:380px}
+.logo{width:70px;height:70px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:auto}
+h1{text-align:center;margin:15px 0;color:#1e40af;font-size:22px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin:6px 0}
+button{background:#2563eb;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+button:hover{background:#1e40af}
+.app{display:none;height:100vh}
+.sidebar{width:240px;background:#1e40af;color:#fff;padding:15px}
+.sidebar h2{margin-bottom:15px}
+.sidebar a{display:block;color:#fff;text-decoration:none;padding:10px;border-radius:8px;margin:4px 0}
+.sidebar a:hover{background:rgba(255,255,255,.15)}
+.main{flex:1;display:flex;flex-direction:column}
+.header{background:#fff;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.content{padding:20px;overflow:auto}
+.layout{display:flex;height:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.stat{background:#fff;padding:20px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.table-wrap,.list-wrap{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08);margin-top:15px}
+.list-wrap table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
+tr:hover{background:#f1f5f9}
+.hidden{display:none}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:768px){
+.layout{flex-direction:column}
+.sidebar{width:100%}
+.row{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
@@ -198,26 +394,7 @@ async function login(){
     document.getElementById("loginPage").style.display="none";
     document.getElementById("app").style.display="block";
     document.getElementById("welcome").innerText="Xin chào Admin";
-    document.getElementById("empMenu").style.display="none";
-
-    showPage("overtime");
-    loadEmployees();
-    loadOT(); // realtime hiển thị cho admin
-    updateDashboard();
-
-  }else{
-    const snap = await db.collection("employees")
-      .where("code","==",u)
-      .where("password","==",p)
-      .get();
-
-    if(!snap.empty){
-      const emp = snap.docs[0].data();
-      currentUser = {role:"emp",code:emp.code,name:emp.name};
-      document.getElementById("loginPage").style.display="none";
-      document.getElementById("app").style.display="block";
-      document.getElementById("welcome").innerText="Xin chào "+emp.name;
-      document.getElementById("adminMenu").style.display="none";
+          document.getElementById("adminMenu").style.display="none";
 
       showPage("myovertime");
       renderMyOT(); // realtime hiển thị cho nhân viên
@@ -227,7 +404,12 @@ async function login(){
   }
 }
 
-function logout(){ location.reload(); }
+// ================== Đăng xuất ==================
+function logout(){
+  location.reload();
+}
+
+// ================== Hiển thị trang ==================
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
@@ -243,17 +425,14 @@ async function saveEmployee(){
     dept: document.getElementById("eDept").value.trim(),
     password: document.getElementById("ePass").value.trim()
   };
-
-  if(editingEmployeeId){ // đang sửa
+  if(editingEmployeeId){
     await db.collection("employees").doc(editingEmployeeId).update(emp);
-    alert("Đã cập nhật nhân viên");
     editingEmployeeId = null;
-  }else{ // thêm mới
+    alert("Đã cập nhật nhân viên");
+  }else{
     await db.collection("employees").add(emp);
     alert("Đã lưu nhân viên");
   }
-
-  // reset form
   document.getElementById("eCode").value="";
   document.getElementById("eName").value="";
   document.getElementById("eDept").value="";
@@ -277,14 +456,13 @@ async function deleteEmployee(id){
   await db.collection("employees").doc(id).delete();
 }
 
-// Realtime Employees
-db.collection("employees").onSnapshot(snapshot => {
+db.collection("employees").onSnapshot(snapshot=>{
   const tbody = document.getElementById("employeeTable");
   if(tbody){
-    tbody.innerHTML = "";
-    snapshot.forEach(doc => {
-      const e = doc.data();
-      tbody.innerHTML += `
+    tbody.innerHTML="";
+    snapshot.forEach(doc=>{
+      const e=doc.data();
+      tbody.innerHTML+=`
         <tr>
           <td>${e.code}</td>
           <td>${e.name}</td>
@@ -296,27 +474,86 @@ db.collection("employees").onSnapshot(snapshot => {
         </tr>`;
     });
   }
+  document.getElementById("sEmp").innerText = snapshot.size;
+  document.getElementById("rEmp").innerText = snapshot.size;
+  const sel = document.getElementById("otEmp");
+  if(sel){
+    sel.innerHTML='<option value="" disabled selected>--Chọn nhân viên--</option>';
+    snapshot.forEach(doc=>{
+      const e=doc.data();
+      sel.innerHTML+=`<option value="${e.code}" data-name="${e.name}">${e.code} - ${e.name}</option>`;
+    });
+  }
+});
 
 // ================== QUẢN LÝ TĂNG CA ==================
+let editingOTId = null;
+
+async function saveOT(){
+  const empCode = document.getElementById("otEmp").value;
+  const empName = document.getElementById("otEmp").selectedOptions[0]?.dataset.name || "";
+  const ot = {
+    emp: empCode,
+    empName: empName,
+    date: document.getElementById("otDate").value,
+    start: document.getElementById("otStart").value,
+    end: document.getElementById("otEnd").value,
+    shift: document.getElementById("otShift").value,
+    work: document.getElementById("otWork").value.trim()
+  };
+  if(editingOTId){
+    await db.collection("overtime").doc(editingOTId).update(ot);
+    editingOTId=null;
+    alert("Đã cập nhật lịch tăng ca");
+  }else{
+    await db.collection("overtime").add(ot);
+    alert("Đã lưu lịch tăng ca");
+  }
+  document.getElementById("otEmp").value="";
+  document.getElementById("otDate").value="";
+  document.getElementById("otStart").value="";
+  document.getElementById("otEnd").value="";
+  document.getElementById("otShift").value="1";
+  document.getElementById("otWork").value="";
+}
+
+function editOT(id){
+  db.collection("overtime").doc(id).get().then(doc=>{
+    if(doc.exists){
+      const o=doc.data();
+      document.getElementById("otEmp").value=o.emp;
+      document.getElementById("otDate").value=o.date;
+      document.getElementById("otStart").value=o.start;
+      document.getElementById("otEnd").value=o.end;
+      document.getElementById("otShift").value=o.shift;
+      document.getElementById("otWork").value=o.work;
+      editingOTId=id;
+    }
+  });
+}
+
+async function deleteOT(id){
+  await db.collection("overtime").doc(id).delete();
+}
+
 function loadOT(){
-  db.collection("overtime").onSnapshot(snapshot => {
-    const tbody = document.getElementById("otTable");
+  db.collection("overtime").onSnapshot(snapshot=>{
+    const tbody=document.getElementById("otTable");
     if(tbody){
-      tbody.innerHTML = "";
-      let i = 1;
-      let total = 0;
-      snapshot.forEach(doc => {
-        const o = doc.data();
-        if(o.start && o.end){
-          const s = new Date("1970-01-01T"+o.start+":00");
-          const e = new Date("1970-01-01T"+o.end+":00");
-          total += (e-s)/1000/3600;
+      tbody.innerHTML="";
+      let i=1,total=0;
+      snapshot.forEach(doc=>{
+        const o=doc.data();
+        if(o.start&&o.end){
+          const s=new Date("1970-01-01T"+o.start+":00");
+          const e=new Date("1970-01-01T"+o.end+":00");
+          total+=(e-s)/1000/3600;
         }
-        tbody.innerHTML += `
+        tbody.innerHTML+=`
           <tr>
             <td>${i++}</td>
             <td>${o.emp}</td>
-            <td>${o.empName || ""}</td>
+            <td>${o.empName||""}</td>
             <td>${o.shift}</td>
             <td>${o.date}</td>
             <td>${o.start}</td>
@@ -328,82 +565,82 @@ function loadOT(){
             </td>
           </tr>`;
       });
-      document.getElementById("sOt").innerText = snapshot.size;
-      document.getElementById("rOt").innerText = snapshot.size;
-      document.getElementById("sHour").innerText = total;
-      document.getElementById("rHour").innerText = total;
+      document.getElementById("sOt").innerText=snapshot.size;
+      document.getElementById("rOt").innerText=snapshot.size;
+      document.getElementById("sHour").innerText=total;
+      document.getElementById("rHour").innerText=total;
     }
   });
 }
 
 // ================== Lịch tăng ca của nhân viên ==================
 function renderMyOT(){
-  if(!currentUser || currentUser.role!=="emp") return;
-  const keyword = document.getElementById("search").value.toLowerCase();
-
-  db.collection("overtime")
-    .where("emp","==",currentUser.code)
-    .onSnapshot(snapshot=>{
-      const tbody = document.getElementById("myTable");
-      if(!tbody) return;
-      tbody.innerHTML = "";
-      snapshot.forEach(doc=>{
-        const o = doc.data();
-        const matchDate = o.date && o.date.toLowerCase().includes(keyword);
-        const matchWork = o.work && o.work.toLowerCase().includes(keyword);
-        if(!keyword || matchDate || matchWork){
-          tbody.innerHTML += `
-            <tr>
-              <td>${o.date}</td>
-              <td>${o.shift}</td>
-              <td>${o.start}</td>
-              <td>${o.end}</td>
-              <td>${o.work}</td>
-            </tr>`;
-        }
-      });
+  if(!currentUser||currentUser.role!=="emp")return;
+  const keyword=document.getElementById("search").value.toLowerCase();
+  db.collection("overtime").where("emp","==",currentUser.code).onSnapshot(snapshot=>{
+    const tbody=document.getElementById("myTable");
+    if(!tbody)return;
+    tbody.innerHTML="";
+    snapshot.forEach(doc=>{
+      const o=doc.data();
+      const matchDate=o.date&&o.date.toLowerCase().includes(keyword);
+      const matchWork=o.work&&o.work.toLowerCase().includes(keyword);
+      if(!keyword||matchDate||matchWork){
+        tbody.innerHTML+=`
+          <tr>
+            <td>${o.date}</td>
+            <td>${o.shift}</td>
+            <td>${o.start}</td>
+            <td>${o.end}</td>
+            <td>${o.work}</td>
+          </tr>`;
+      }
     });
+  });
 }
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
 async function calculateOvertimeByRange(){
-  if(!currentUser || currentUser.role!=="emp") return;
-  const from = document.getElementById("fromDate").value;
-  const to = document.getElementById("toDate").value;
-  if(!from || !to){ alert("Chọn khoảng ngày"); return; }
-
-  const snap = await db.collection("overtime")
-    .where("emp","==",currentUser.code).get();
-
-  let total = 0;
+  if(!currentUser||currentUser.role!=="emp")return;
+  const from=document.getElementById("fromDate").value;
+  const to=document.getElementById("toDate").value;
+  if(!from||!to){alert("Chọn khoảng ngày");return;}
+  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
+  let total=0;
   snap.forEach(doc=>{
-    const o = doc.data();
-    if(o.date && o.date >= from && o.date <= to && o.start && o.end){
-      const s = new Date("1970-01-01T"+o.start+":00");
-      const e = new Date("1970-01-01T"+o.end+":00");
-      total += (e-s)/1000/3600;
+    const o=doc.data();
+    if(o.date&&o.date>=from&&o.date<=to&&o.start&&o.end){
+      const s=new Date("1970-01-01T"+o.start+":00");
+      const e=new Date("1970-01-01T"+o.end+":00");
+      total+=(e-s)/1000/3600;
     }
   });
-  document.getElementById("overtimeHours").innerText = "Bạn đã tăng ca: "+total+" giờ";
+  document.getElementById("overtimeHours").innerText="Bạn đã tăng ca: "+total+" giờ";
 }
 
 // ================== Import tăng ca từ file CSV ==================
-document.getElementById("fileOT").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  if(!file){ return; }
-  const text = await file.text();
-  const rows = text.split("\n").slice(1);
-
+document.getElementById("fileOT").addEventListener("change",async(event)=>{
+  const file=event.target.files[0];
+  if(!file)return;
+  const text=await file.text();
+  const rows=text.split("\n").slice(1);
   for(const row of rows){
-    if(!row.trim()) continue;
-    const [emp,empName,shift,date,start,end,work] = row.split(",").map(x=>x.trim());
-    if(emp && date){
-      await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
+    if(!row.trim())continue;
+    const [emp,empName,shift,date,start,end,work]=row.split(",").map(x=>x.trim());
+        if(emp && date){
+      await db.collection("overtime").add({
+        emp,
+        empName,
+        shift,
+        date,
+        start,
+        end,
+        work
+      });
     }
   }
   alert("Đã import lịch tăng ca từ file!");
 });
-
-  </script>
+</script>
 </body>
 </html>
