@@ -419,6 +419,40 @@ async function saveOT(){
     alert("Không thể lưu, kiểm tra console");
   }
 }
+  function loadEmployees(){
+  db.collection("employees").onSnapshot(snapshot=>{
+    const tbody = document.getElementById("employeeTable");
+    if(tbody){
+      tbody.innerHTML="";
+      snapshot.forEach(doc=>{
+        const e=doc.data();
+        tbody.innerHTML+=`
+          <tr>
+            <td>${e.code}</td>
+            <td>${e.name}</td>
+            <td>${e.dept}</td>
+            <td>
+              <button onclick="editEmployee('${doc.id}')">Sửa</button>
+              <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
+            </td>
+          </tr>`;
+      });
+    }
+    // cập nhật số lượng nhân viên
+    document.getElementById("sEmp").innerText = snapshot.size;
+    document.getElementById("rEmp").innerText = snapshot.size;
+    // cập nhật dropdown chọn nhân viên trong form OT
+    const sel = document.getElementById("otEmp");
+    if(sel){
+      sel.innerHTML='<option value="" disabled selected>--Chọn nhân viên--</option>';
+      snapshot.forEach(doc=>{
+        const e=doc.data();
+        sel.innerHTML+=`<option value="${e.code}" data-name="${e.name}">${e.code} - ${e.name}</option>`;
+      });
+    }
+  });
+}
+
 
 </script>
 </body>
