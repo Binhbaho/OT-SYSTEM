@@ -187,28 +187,46 @@ let currentUser = null;
 async function login(){
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
+
   if(u==="Admin" && p==="6180"){
+    // Đăng nhập admin
     currentUser = {role:"admin",name:"Quản trị"};
     document.getElementById("loginPage").style.display="none";
     document.getElementById("app").style.display="block";
     document.getElementById("welcome").innerText="Xin chào Admin";
+
     // Ẩn menu nhân viên khi là admin
-    //document.getElementById("empMenu").style.display="none";
+    document.getElementById("empMenu").style.display="none";
+
+    // Hiển thị trang quản lý tăng ca
     showPage("overtime");
+
+    // Gọi các hàm dành cho admin
     loadEmployees();
-    loadOT();
+    renderAllOT();   // <-- thêm dòng này để hiển thị toàn bộ tăng ca
     updateDashboard();
+
   }else{
-    // kiểm tra trong employees
-    const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
+    // Đăng nhập nhân viên
+    const snap = await db.collection("employees")
+      .where("code","==",u)
+      .where("password","==",p)
+      .get();
+
     if(!snap.empty){
       const emp = snap.docs[0].data();
       currentUser = {role:"emp",code:emp.code,name:emp.name};
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
       document.getElementById("welcome").innerText="Xin chào "+emp.name;
+
+      // Ẩn menu admin khi là nhân viên
       document.getElementById("adminMenu").style.display="none";
+
+      // Hiển thị trang lịch tăng ca của nhân viên
       showPage("myovertime");
+
+      // Gọi hàm render cho nhân viên
       renderMyOT();
     }else{
       alert("Sai tài khoản hoặc mật khẩu");
