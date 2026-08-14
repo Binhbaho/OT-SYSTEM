@@ -295,6 +295,10 @@ db.collection("employees").onSnapshot(snapshot=>{
 // ================== QUẢN LÝ TĂNG CA ==================
 function loadOT(){
   db.collection("overtime").onSnapshot(snapshot=>{
+    console.log("Số lịch tăng ca:", snapshot.size);
+    snapshot.forEach(doc=>{
+      console.log("OT record:", doc.data());
+    });
     const tbody=document.getElementById("otTable");
     if(tbody){
       tbody.innerHTML="";
