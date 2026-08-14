@@ -295,40 +295,36 @@ db.collection("employees").onSnapshot(snapshot=>{
 // ================== QUẢN LÝ TĂNG CA ==================
 function loadOT(){
   db.collection("overtime").onSnapshot(snapshot=>{
-    console.log("Số lịch tăng ca:", snapshot.size);
-    snapshot.forEach(doc=>{
-      console.log("OT record:", doc.data());
-    });
     const tbody=document.getElementById("otTable");
-    if(tbody){
-      tbody.innerHTML="";
-      let i=1,total=0;
-      snapshot.forEach(doc=>{
-        const o=doc.data();
-        if(o.start&&o.end){
-          const s=new Date("1970-01-01T"+o.start+":00");
-          const e=new Date("1970-01-01T"+o.end+":00");
-          total+=(e-s)/1000/3600;
-        }
-        tbody.innerHTML+=`
-          <tr>
-            <td>${i++}</td>
-            <td>${o.emp}</td>
-            <td>${o.empName||""}</td>
-            <td>${o.shift}</td>
-            <td>${o.date}</td>
-            <td>${o.start}</td>
-            <td>${o.end}</td>
-            <td>${o.work}</td>
-          </tr>`;
-      });
-      document.getElementById("sOt").innerText=snapshot.size;
-      document.getElementById("rOt").innerText=snapshot.size;
-      document.getElementById("sHour").innerText=total;
-      document.getElementById("rHour").innerText=total;
-    }
+    if(!tbody) return;
+    tbody.innerHTML="";
+    let i=1,total=0;
+    snapshot.forEach(doc=>{
+      const o=doc.data();
+      if(o.start && o.end){
+        const s=new Date("1970-01-01T"+o.start+":00");
+        const e=new Date("1970-01-01T"+o.end+":00");
+        total+=(e-s)/1000/3600;
+      }
+      tbody.innerHTML+=`
+        <tr>
+          <td>${i++}</td>
+          <td>${o.emp}</td>
+          <td>${o.empName||""}</td>
+          <td>${o.shift}</td>
+          <td>${o.date}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+        </tr>`;
+    });
+    document.getElementById("sOt").innerText=snapshot.size;
+    document.getElementById("rOt").innerText=snapshot.size;
+    document.getElementById("sHour").innerText=total;
+    document.getElementById("rHour").innerText=total;
   });
 }
+
 
 // ================== Lịch tăng ca của nhân viên ==================
 function renderMyOT(){
