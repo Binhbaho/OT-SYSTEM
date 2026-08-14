@@ -293,55 +293,6 @@ db.collection("employees").onSnapshot(snapshot=>{
 });
 
 // ================== QUẢN LÝ TĂNG CA ==================
-let editingOTId = null;
-
-async function saveOT(){
-  const empCode = document.getElementById("otEmp").value;
-  const empName = document.getElementById("otEmp").selectedOptions[0]?.dataset.name || "";
-  const ot = {
-    emp: empCode,
-    empName: empName,
-    date: document.getElementById("otDate").value,
-    start: document.getElementById("otStart").value,
-    end: document.getElementById("otEnd").value,
-    shift: document.getElementById("otShift").value,
-    work: document.getElementById("otWork").value.trim()
-  };
-  if(editingOTId){
-    await db.collection("overtime").doc(editingOTId).update(ot);
-    editingOTId=null;
-    alert("Đã cập nhật lịch tăng ca");
-  }else{
-    await db.collection("overtime").add(ot);
-    alert("Đã lưu lịch tăng ca");
-  }
-  document.getElementById("otEmp").value="";
-  document.getElementById("otDate").value="";
-  document.getElementById("otStart").value="";
-  document.getElementById("otEnd").value="";
-  document.getElementById("otShift").value="1";
-  document.getElementById("otWork").value="";
-}
-
-function editOT(id){
-  db.collection("overtime").doc(id).get().then(doc=>{
-    if(doc.exists){
-      const o=doc.data();
-      document.getElementById("otEmp").value=o.emp;
-      document.getElementById("otDate").value=o.date;
-      document.getElementById("otStart").value=o.start;
-      document.getElementById("otEnd").value=o.end;
-      document.getElementById("otShift").value=o.shift;
-      document.getElementById("otWork").value=o.work;
-      editingOTId=id;
-    }
-  });
-}
-
-async function deleteOT(id){
-  await db.collection("overtime").doc(id).delete();
-}
-
 function loadOT(){
   db.collection("overtime").onSnapshot(snapshot=>{
     const tbody=document.getElementById("otTable");
@@ -365,10 +316,6 @@ function loadOT(){
             <td>${o.start}</td>
             <td>${o.end}</td>
             <td>${o.work}</td>
-            <td>
-              <button onclick="editOT('${doc.id}')">Sửa</button>
-              <button onclick="deleteOT('${doc.id}')">Xóa</button>
-            </td>
           </tr>`;
       });
       document.getElementById("sOt").innerText=snapshot.size;
@@ -404,6 +351,7 @@ function renderMyOT(){
     });
   });
 }
+
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
 async function calculateOvertimeByRange(){
