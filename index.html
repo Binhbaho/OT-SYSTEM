@@ -387,6 +387,39 @@ document.getElementById("fileOT").addEventListener("change",async(event)=>{
   }
   alert("Đã import lịch tăng ca từ file!");
 });
+  
+async function saveOT(){
+  const empCode = document.getElementById("otEmp").value;
+  if(!empCode){
+    alert("Vui lòng chọn nhân viên");
+    return;
+  }
+  const empName = document.getElementById("otEmp").selectedOptions[0]?.dataset.name || "";
+  const ot = {
+    emp: empCode,
+    empName: empName,
+    date: document.getElementById("otDate").value,
+    start: document.getElementById("otStart").value,
+    end: document.getElementById("otEnd").value,
+    shift: document.getElementById("otShift").value,
+    work: document.getElementById("otWork").value.trim()
+  };
+  try {
+    await db.collection("overtime").add(ot);
+    alert("Đã lưu lịch tăng ca");
+    // reset form
+    document.getElementById("otEmp").value="";
+    document.getElementById("otDate").value="";
+    document.getElementById("otStart").value="";
+    document.getElementById("otEnd").value="";
+    document.getElementById("otShift").value="1";
+    document.getElementById("otWork").value="";
+  } catch(err){
+    console.error("Lỗi khi lưu:", err);
+    alert("Không thể lưu, kiểm tra console");
+  }
+}
+
 </script>
 </body>
 </html>
