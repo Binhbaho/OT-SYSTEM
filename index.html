@@ -42,7 +42,6 @@ tr:hover{background:#f1f5f9}
 .row{grid-template-columns:1fr}
 }
 </style>
-
 </head>
 <body>
 
@@ -203,201 +202,9 @@ async function login(){
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
       document.getElementById("welcome").innerText="Xin chào "+emp.name;
-      document.getElementById("adminMenu").style.display="
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
-body{background:#f8fafc;color:#1e293b}
-.login{display:flex;align-items:center;justify-content:center;height:100vh}
-.card{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.1);width:380px}
-.logo{width:70px;height:70px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:auto}
-h1{text-align:center;margin:15px 0;color:#1e40af;font-size:22px}
-input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin:6px 0}
-button{background:#2563eb;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-button:hover{background:#1e40af}
-.app{display:none;height:100vh}
-.sidebar{width:240px;background:#1e40af;color:#fff;padding:15px}
-.sidebar h2{margin-bottom:15px}
-.sidebar a{display:block;color:#fff;text-decoration:none;padding:10px;border-radius:8px;margin:4px 0}
-.sidebar a:hover{background:rgba(255,255,255,.15)}
-.main{flex:1;display:flex;flex-direction:column}
-.header{background:#fff;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-.content{padding:20px;overflow:auto}
-.layout{display:flex;height:100%}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
-.stat{background:#fff;padding:20px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
-.table-wrap,.list-wrap{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08);margin-top:15px}
-.list-wrap table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
-tr:hover{background:#f1f5f9}
-.hidden{display:none}
-.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media(max-width:768px){
-.layout{flex-direction:column}
-.sidebar{width:100%}
-.row{grid-template-columns:1fr}
-}
-</style>
-</head>
-<body>
-
-<div id="loginPage" class="login">
-  <div class="card">
-    <div class="logo">OT</div>
-    <h1>HỆ THỐNG TRA CỨU TĂNG CA</h1>
-    <input id="username" placeholder="Tên đăng nhập">
-    <input id="password" type="password" placeholder="Mật khẩu">
-    <button onclick="login()" style="width:100%">Đăng nhập</button>
-  </div>
-</div>
-
-<div id="app" class="app">
-  <div class="layout">
-    <div class="sidebar">
-      <h2>MENU</h2>
-      <div id="adminMenu">
-        <a href="#" onclick="showPage('home')">Trang chủ</a>
-        <a href="#" onclick="showPage('employees')">Quản lý nhân viên</a>
-        <a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
-        <a href="#" onclick="showPage('report')">Báo cáo</a>
-      </div>
-      <div id="empMenu">
-        <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
-        <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
-      </div>
-      <a href="#" onclick="logout()">Đăng xuất</a>
-    </div>
-
-    <div class="main">
-      <div class="header"><span id="welcome"></span></div>
-      <div class="content">
-
-        <!-- Dashboard, Employees, Overtime, Report, MyOvertime, TotalOvertime giữ nguyên như bạn đã viết -->
-        <!-- Lưu ý: bảng admin có id="otTable", bảng nhân viên có id="myTable" -->
-
-   <div id="home" class="page">
-  <h2>Dashboard</h2>
-  <div class="cards">
-    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
-    <div class="stat"><h3>Tổng nhân viên tăng ca</h3><h1 id="sOt">0</h1></div>
-    <div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
-  </div>
-</div>
-
-<div id="employees" class="page hidden">
-  <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
-  <h3>Import nhân viên từ file CSV</h3>
-<input type="file" id="fileEmployees" />
-  <div class="table-wrap">
-    <div class="row">
-      <input id="eCode" placeholder="Mã NV">
-      <input id="eName" placeholder="Họ tên">
-      <input id="eDept" placeholder="Bộ phận">
-      <input id="ePass" placeholder="Mật khẩu">
-    </div><br>
-    <button onclick="saveEmployee()">Lưu</button>
-  </div>
-  <div class="list-wrap">
-    <table>
-      <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
-      <tbody id="employeeTable"></tbody>
-    </table>
-  </div>
-</div>
-
-<div id="overtime" class="page hidden">
-  <h2>Quản lý tăng ca</h2>
-  <h3>Import tăng ca từ file CSV</h3>
-<input type="file" id="fileOT" />
-  <div class="table-wrap">
-    <div class="row">
-      <select id="otEmp">
-  <option value="" disabled selected>--Chọn nhân viên--</option>
-      </select>
-      <input id="otDate" type="date">
-      <input id="otStart" type="time">
-      <input id="otEnd" type="time">
-      <select id="otShift">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-      </select>
-    </div>
-    <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
-    <button onclick="saveOT()">Lưu</button>
-    <table>
-      <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
-      <tbody id="otTable"></tbody>
-    </table>
-  </div>
-</div>
-
-<div id="report" class="page hidden">
-  <h2>Báo cáo</h2>
-  <div class="cards">
-    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
-    <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
-    <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
-  </div>
-</div>
-
-<div id="myovertime" class="page hidden">
-  <h2>Lịch tăng ca của tôi</h2>
-  <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
-      <tbody id="myTable"></tbody>
-    </table>
-  </div>
-</div>
-
-<div id="totalOvertime" class="page hidden">
-  <h2>Tổng thời gian tăng ca</h2>
-  <label>Từ ngày: <input type="date" id="fromDate"></label>
-  <label>Đến ngày: <input type="date" id="toDate"></label>
-  <button onclick="calculateOvertimeByRange()">Tính tổng giờ</button>
-  <p id="overtimeHours">Bạn đã tăng ca: 0 giờ</p>
-</div>
-
-</div> <!-- content -->
-</div> <!-- main -->
-</div> <!-- layout -->
-</div> <!-- app -->
-
-
-
-<script>
-// ================== Firebase config ==================
-const firebaseConfig = {
-  apiKey: "AIzaSyBHuYK7w1Q0is13lG79NhVV-l-MX0ZQfiQ",
-  authDomain: "quan-ly-ot-e6fc6.firebaseapp.com",
-  projectId: "quan-ly-ot-e6fc6",
-  storageBucket: "quan-ly-ot-e6fc6.firebasestorage.app",
-  messagingSenderId: "552930745604",
-  appId: "1:552930745604:web:85bdf405543d90f5008451",
-  measurementId: "G-89YVZMFF8F"
-};
-const appFirebase = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-let currentUser = null;
-
-// ================== Đăng nhập ==================
-async function login(){
-  const u = document.getElementById("username").value;
-  const p = document.getElementById("password").value;
-
-  if(u==="Admin" && p==="6180"){
-    currentUser = {role:"admin",name:"Quản trị"};
-    document.getElementById("loginPage").style.display="none";
-    document.getElementById("app").style.display="block";
-    document.getElementById("welcome").innerText="Xin chào Admin";
-          document.getElementById("adminMenu").style.display="none";
-
+      document.getElementById("adminMenu").style.display="none";
       showPage("myovertime");
-      renderMyOT(); // realtime hiển thị cho nhân viên
+      renderMyOT();
     }else{
       alert("Sai tài khoản hoặc mật khẩu");
     }
@@ -409,7 +216,6 @@ function logout(){
   location.reload();
 }
 
-// ================== Hiển thị trang ==================
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
@@ -627,16 +433,8 @@ document.getElementById("fileOT").addEventListener("change",async(event)=>{
   for(const row of rows){
     if(!row.trim())continue;
     const [emp,empName,shift,date,start,end,work]=row.split(",").map(x=>x.trim());
-        if(emp && date){
-      await db.collection("overtime").add({
-        emp,
-        empName,
-        shift,
-        date,
-        start,
-        end,
-        work
-      });
+    if(emp&&date){
+      await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
     }
   }
   alert("Đã import lịch tăng ca từ file!");
