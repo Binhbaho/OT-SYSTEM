@@ -435,6 +435,35 @@ function renderMyOT(){
       });
     });
 }
+  function renderAllOT(){
+  if(!currentUser || currentUser.role!=="admin") return;
+  const keyword = document.getElementById("search").value.toLowerCase();
+
+  db.collection("overtime")
+    .onSnapshot(snapshot=>{
+      const tbody = document.getElementById("myTable");
+      if(!tbody) return;
+      tbody.innerHTML = "";
+      snapshot.forEach(doc=>{
+        const o = doc.data();
+        const matchDate = o.date && o.date.toLowerCase().includes(keyword);
+        const matchWork = o.work && o.work.toLowerCase().includes(keyword);
+        if(!keyword || matchDate || matchWork){
+          tbody.innerHTML += `
+            <tr>
+              <td>${o.emp}</td>
+              <td>${o.empName}</td>
+              <td>${o.date}</td>
+              <td>${o.shift}</td>
+              <td>${o.start}</td>
+              <td>${o.end}</td>
+              <td>${o.work}</td>
+            </tr>`;
+        }
+      });
+    });
+}
+
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
 async function calculateOvertimeByRange(){
