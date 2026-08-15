@@ -954,10 +954,13 @@ function renderTotalOT(){
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
+
+  // Nếu nhân viên mở trang Tổng thời gian tăng ca thì gọi calcTotal()
   if(id==="totalOvertime" && currentUser && currentUser.role==="emp"){
-    renderTotalOT();
+    calcTotal();
   }
 }
+
   
 </script>
 </body>
