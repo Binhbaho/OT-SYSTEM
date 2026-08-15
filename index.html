@@ -404,17 +404,9 @@ function resetSearch() {
   document.getElementById("searchDate").value = "";
   document.getElementById("searchWork").value = "";
 
-  // Hiển thị lại tất cả các dòng và cập nhật STT
-  const table = document.getElementById("otTable");
-  const rows = table.rows;
-  for (let i = 0; i < rows.length; i++) {
-    rows[i].style.display = "";
-    rows[i].cells[0].innerText = i + 1;
-  }
+  // Gọi lại loadOT để tải dữ liệu mới nhất từ Firestore
+  loadOT();
 }
-
-
-
 
 // ================== Lịch tăng ca của nhân viên ==================
 function renderMyOT(){
