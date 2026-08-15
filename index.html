@@ -292,6 +292,7 @@ tr:hover{background:#f1f5f9}
     <input type="date" id="myEnd">
 
     <button onclick="renderMyOT()">Lọc</button>
+    <button onclick="resetMyOT()">Reset</button>
   </div>
 
   <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
@@ -629,6 +630,31 @@ function renderMyOT() {
   });
 }
 
+function resetMyOT() {
+  // xóa filter
+  document.getElementById("myStart").value = "";
+  document.getElementById("myEnd").value = "";
+  document.getElementById("search").value = "";
+
+  // render lại toàn bộ dữ liệu
+  const tbody = document.getElementById("myTable");
+  tbody.innerHTML = "";
+
+  db.collection("overtime").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const o = doc.data();
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${o.date}</td>
+        <td>${o.shift}</td>
+        <td>${o.start}</td>
+        <td>${o.end}</td>
+        <td>${o.job}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  });
+}
 
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
