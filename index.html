@@ -313,6 +313,7 @@ tr:hover{background:#f1f5f9}
 <div id="totalOvertime" class="page hidden">
   <h2>Tổng thời gian tăng ca của tôi</h2>
 
+  <!-- Filter -->
   <div class="filter-bar" style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
     <label for="totalStart">Từ ngày:</label>
     <input type="date" id="totalStart">
@@ -326,19 +327,26 @@ tr:hover{background:#f1f5f9}
     <button onclick="resetTotal()">Reset</button>
   </div>
 
-  <div class="table-wrap" style="overflow-x:auto;">
-    <table border="1" cellspacing="0" cellpadding="4">
+  <!-- Card tổng giờ -->
+  <div class="cards">
+    <div class="stat">
+      <h3>Tổng giờ của tôi</h3>
+      <h1 id="myHour">0</h1>
+    </div>
+  </div>
+
+  <!-- Bảng chi tiết -->
+  <div class="list-wrap">
+    <h3>Bảng chi tiết tăng ca theo tháng</h3>
+    <table id="reportDetail" border="1" cellspacing="0" cellpadding="4">
       <thead>
-        <tr>
-          <th>Mã NV</th><th>Tên NV</th>
-          <th>1</th><th>2</th>...<th>31</th>
-          <th>Total</th>
-        </tr>
+        <tr></tr> <!-- JS sẽ thêm cột -->
       </thead>
-      <tbody id="totalBody"></tbody>
+      <tbody></tbody>
     </table>
   </div>
 </div>
+
 
 
       </div>
@@ -681,6 +689,20 @@ function resetMyOT() {
 
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
+// Sinh cột 1..31 + Total
+window.addEventListener("DOMContentLoaded", () => {
+  const headerRow = document.querySelector("#reportDetail thead tr");
+  headerRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+  for (let d=1; d<=31; d++) {
+    const th = document.createElement("th");
+    th.textContent = d;
+    headerRow.appendChild(th);
+  }
+  const thTotal = document.createElement("th");
+  thTotal.textContent = "Total";
+  headerRow.appendChild(thTotal);
+});
+
 function normalizeDate(str) {
   if (str.includes("/")) {
     const [d,m,y] = str.split("/");
@@ -693,7 +715,7 @@ function calcTotal() {
   const start = document.getElementById("totalStart").value;
   const end = document.getElementById("totalEnd").value;
   let totalHour = 0;
-  const tbody = document.getElementById("totalBody");
+  const tbody = document.querySelector("#reportDetail tbody");
   tbody.innerHTML = "";
 
   db.collection("overtime").get().then(snapshot => {
@@ -738,16 +760,18 @@ function calcTotal() {
     }
 
     document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
+    document.getElementById("myHour").innerText = totalHour;
   });
 }
-
 
 function resetTotal() {
   document.getElementById("totalStart").value="";
   document.getElementById("totalEnd").value="";
   document.getElementById("totalHour").innerText="Tổng giờ: 0";
-  document.getElementById("totalBody").innerHTML="";
+  document.getElementById("myHour").innerText="0";
+  document.querySelector("#reportDetail tbody").innerHTML="";
 }
+
 
 // ================== Import tăng ca từ file CSV ==================
 document.getElementById("fileOT").addEventListener("change",async(event)=>{
