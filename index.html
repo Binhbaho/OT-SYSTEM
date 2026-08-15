@@ -143,8 +143,7 @@ tr:hover{background:#f1f5f9}
     <div class="stat" style="flex:1;">
       <h3>Tổng nhân viên tăng ca (hôm nay)</h3>
       <h1 id="sOtToday">0</h1>
-      <span id="sHourShift1">0</span>
-    </div>
+      </div>
   </div>
 
   <!-- Tiêu đề cho bảng ca -->
@@ -493,74 +492,268 @@ function isToday(dateStr) {
 }
 
 // ================== QUẢN LÝ TĂNG CA ==================
+// ================== LOAD DỮ LIỆU TĂNG CA ==================
 function loadOT() {
-  let totalHour = 0;
-  let empTodaySet = new Set();
-  let shiftStats = {
-    1: { emp: 0, hour: 0 },
-    2: { emp: 0, hour: 0 },
-    3: { emp: 0, hour: 0 },
-    4: { emp: 0, hour: 0 }
-  };
 
   db.collection("overtime").onSnapshot(snapshot => {
+
+    // ==========================================
+    // RESET DỮ LIỆU MỖI KHI FIREBASE CẬP NHẬT
+    // ==========================================
+
+    let totalHour = 0;
+
+    // Nhân viên tăng ca hôm nay
+    const empTodaySet = new Set();
+
+    // Nhân viên theo từng ca
+    const shiftEmpSet = {
+      1: new Set(),
+      2: new Set(),
+      3: new Set(),
+      4: new Set()
+    };
+
+    // Tổng giờ theo từng ca
+    const shiftHour = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0
+    };
+
+
+    // ==========================================
+    // HIỂN THỊ BẢNG QUẢN LÝ TĂNG CA
+    // ==========================================
+
     const tbody = document.getElementById("otTable");
-    if (tbody) tbody.innerHTML = "";
-    let i = 1;
+
+    if (tbody) {
+      tbody.innerHTML = "";
+    }
+
+    let stt = 1;
+
+
+    // ==========================================
+    // ĐỌC TỪNG DÒNG TĂNG CA
+    // ==========================================
 
     snapshot.forEach(doc => {
+
       const o = doc.data();
+
+      // ----------------------------------------
+      // TÍNH SỐ GIỜ TĂNG CA
+      // ----------------------------------------
+
       let hours = 0;
+
       if (o.start && o.end) {
-        const s = new Date("1970-01-01T" + o.start + ":00");
-        let e = new Date("1970-01-01T" + o.end + ":00");
-        if (e < s) e.setHours(e.getHours() + 24);
+
+        const s = new Date(
+          "1970-01-01T" + o.start + ":00"
+        );
+
+        let e = new Date(
+          "1970-01-01T" + o.end + ":00"
+        );
+
+        // Nếu qua ngày hôm sau
+        if (e < s) {
+          e.setHours(e.getHours() + 24);
+        }
+
         hours = (e - s) / 1000 / 3600;
+
+        // Tổng giờ toàn hệ thống
         totalHour += hours;
       }
 
-      // Nếu là ngày hiện hành thì tính riêng
+
+      // ========================================
+      // CHỈ XỬ LÝ DỮ LIỆU TĂNG CA HÔM NAY
+      // ========================================
+
       if (o.date && isToday(o.date.trim())) {
-        empTodaySet.add(o.emp);
-        if (shiftStats[o.shift]) {
-          shiftStats[o.shift].emp++;
-          shiftStats[o.shift].hour += hours;
+
+        // Mã nhân viên
+        const empCode = String(o.emp || "").trim();
+
+        // --------------------------------------
+        // TỔNG NHÂN VIÊN TĂNG CA HÔM NAY
+        // --------------------------------------
+
+        if (empCode) {
+          empTodaySet.add(empCode);
+        }
+
+
+        // --------------------------------------
+        // XỬ LÝ CA
+        // Cho phép:
+        // "1"
+        // 1
+        // "Ca 1"
+        // "ca 1"
+        // --------------------------------------
+
+        let shift = String(o.shift || "")
+          .trim()
+          .toLowerCase();
+
+        // Lấy số ca từ chuỗi
+        const match = shift.match(/[1-4]/);
+
+        if (match) {
+
+          const shiftNumber = Number(match[0]);
+
+          // Nhân viên duy nhất của ca
+          if (empCode) {
+            shiftEmpSet[shiftNumber].add(empCode);
+          }
+
+          // Tổng giờ của ca
+          shiftHour[shiftNumber] += hours;
         }
       }
 
+
+      // ========================================
+      // HIỂN THỊ BẢNG DỮ LIỆU
+// ========================================
+
       if (tbody) {
+
         const row = document.createElement("tr");
+
         row.innerHTML = `
-          <td>${i++}</td>
-          <td>${o.emp}</td>
+          <td>${stt++}</td>
+          <td>${o.emp || ""}</td>
           <td>${o.empName || ""}</td>
-          <td>${o.shift}</td>
-          <td>${o.date}</td>
-          <td>${o.start}</td>
-          <td>${o.end}</td>
-          <td>${o.work}</td>
+          <td>${o.shift || ""}</td>
+          <td>${o.date || ""}</td>
+          <td>${o.start || ""}</td>
+          <td>${o.end || ""}</td>
+          <td>${o.work || ""}</td>
+
           <td>
-            <button class="btn btn-warning btn-sm" onclick="editOT('${doc.id}')">Sửa</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteOT('${doc.id}')">Xóa</button>
+            <button
+              class="btn btn-warning btn-sm"
+              onclick="editOT('${doc.id}')">
+              Sửa
+            </button>
+
+            <button
+              class="btn btn-danger btn-sm"
+              onclick="deleteOT('${doc.id}')">
+              Xóa
+            </button>
           </td>
         `;
+
         tbody.appendChild(row);
       }
+
     });
 
-    // cập nhật số liệu tổng quan
-    document.getElementById("sOtToday").innerText = snapshot.size;
-    document.getElementById("rOt").innerText = snapshot.size;
-    document.getElementById("sHour").innerText = totalHour;
-    document.getElementById("rHour").innerText = totalHour;
 
-    // cập nhật số liệu hôm nay
+    // ==========================================
+    // CẬP NHẬT DASHBOARD
+    // ==========================================
+
+    // Tổng nhân viên tăng ca hôm nay
     const totalEmpToday = empTodaySet.size;
-    document.getElementById("sOtToday").innerText = totalEmpToday;
-    for (let i = 1; i <= 4; i++) {
-      document.getElementById("sOtShift" + i).innerText = shiftStats[i].emp;
-      document.getElementById("sHourShift" + i).innerText = shiftStats[i].hour;
+
+    const sOtToday = document.getElementById("sOtToday");
+
+    if (sOtToday) {
+      sOtToday.innerText = totalEmpToday;
     }
+
+
+    // ==========================================
+    // CA 1
+    // ==========================================
+
+    const sOtShift1 = document.getElementById("sOtShift1");
+    const sHourShift1 = document.getElementById("sHourShift1");
+
+    if (sOtShift1) {
+      sOtShift1.innerText = shiftEmpSet[1].size;
+    }
+
+    if (sHourShift1) {
+      sHourShift1.innerText =
+        Number(shiftHour[1].toFixed(2));
+    }
+
+
+    // ==========================================
+    // CA 2
+    // ==========================================
+
+    const sOtShift2 = document.getElementById("sOtShift2");
+    const sHourShift2 = document.getElementById("sHourShift2");
+
+    if (sOtShift2) {
+      sOtShift2.innerText = shiftEmpSet[2].size;
+    }
+
+    if (sHourShift2) {
+      sHourShift2.innerText =
+        Number(shiftHour[2].toFixed(2));
+    }
+
+
+    // ==========================================
+    // CA 3
+    // ==========================================
+
+    const sOtShift3 = document.getElementById("sOtShift3");
+    const sHourShift3 = document.getElementById("sHourShift3");
+
+    if (sOtShift3) {
+      sOtShift3.innerText = shiftEmpSet[3].size;
+    }
+
+    if (sHourShift3) {
+      sHourShift3.innerText =
+        Number(shiftHour[3].toFixed(2));
+    }
+
+
+    // ==========================================
+    // CA 4
+    // ==========================================
+
+    const sOtShift4 = document.getElementById("sOtShift4");
+    const sHourShift4 = document.getElementById("sHourShift4");
+
+    if (sOtShift4) {
+      sOtShift4.innerText = shiftEmpSet[4].size;
+    }
+
+    if (sHourShift4) {
+      sHourShift4.innerText =
+        Number(shiftHour[4].toFixed(2));
+    }
+
+
+    // ==========================================
+    // TỔNG GIỜ TĂNG CA
+    // Chỉ cập nhật nếu phần tử tồn tại
+// ==========================================
+
+    const rHour = document.getElementById("rHour");
+
+    if (rHour) {
+      rHour.innerText =
+        Number(totalHour.toFixed(2));
+    }
+
   });
 }
 
