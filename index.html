@@ -338,12 +338,13 @@ tr:hover{background:#f1f5f9}
   <!-- Bảng chi tiết -->
   <div class="list-wrap">
     <h3>Bảng chi tiết tăng ca theo tháng</h3>
-    <table id="reportDetail" border="1" cellspacing="0" cellpadding="4">
-      <thead>
-        <tr></tr> <!-- JS sẽ thêm cột -->
-      </thead>
-      <tbody></tbody>
-    </table>
+    <table id="reportDetailEmp" border="1" cellspacing="0" cellpadding="4">
+  <thead>
+    <tr></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
   </div>
 </div>
 
@@ -706,24 +707,31 @@ function resetMyOT() {
     return str;
   }
 
-  function calcTotal() {
+ function calcTotal() {
   const start = document.getElementById("totalStart").value;
   const end = document.getElementById("totalEnd").value;
   let totalHour = 0;
-  const tbody = document.querySelector("#reportDetail tbody");
+  const theadRow = document.querySelector("#reportDetailEmp thead tr");
+  const tbody = document.querySelector("#reportDetailEmp tbody");
+
+  // Sinh cột
+  theadRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+  for (let d=1; d<=31; d++) {
+    theadRow.innerHTML += `<th>${d}</th>`;
+  }
+  theadRow.innerHTML += "<th>Total</th>";
+
   tbody.innerHTML = "";
 
   db.collection("overtime").get().then(snapshot => {
     const dataMap = {};
     snapshot.forEach(doc => {
       const o = doc.data();
-      const date = normalizeDate(o.date);
+      const date = o.date;
 
-      // lọc theo nhân viên đăng nhập (không phân biệt hoa/thường)
       if (!currentUser) return;
       if (o.emp.trim().toLowerCase() !== currentUser.code.trim().toLowerCase()) return;
 
-      // lọc theo khoảng ngày
       if (start && end) {
         if (date < start || date > end) return;
       } else if (start) {
@@ -763,6 +771,7 @@ function resetMyOT() {
     document.getElementById("myHour").innerText = totalHour;
   });
 }
+
 
 
   function resetTotal() {
