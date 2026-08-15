@@ -125,6 +125,16 @@ tr:hover{background:#f1f5f9}
               <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
               <tbody id="otTable"></tbody>
             </table>
+            <div class="toolbar">
+  <label>Sắp xếp theo:</label>
+  <button onclick="sortOT('emp')">Mã NV</button>
+  <button onclick="sortOT('shift')">Ca</button>
+  <button onclick="sortOT('date')">Ngày</button>
+  <button onclick="sortOT('work')">Công việc</button>
+
+  <input type="text" id="searchOT" placeholder="Tìm kiếm..." onkeyup="filterOT()">
+</div>
+
           </div>
         </div>
 
