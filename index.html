@@ -57,6 +57,18 @@ th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
 .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 
+/* Bảng báo cáo chi tiết */
+.list-wrap {overflow-x:auto;}       /* bật scroll ngang */
+#reportDetail {min-width:900px;}    /* đảm bảo đủ rộng cho 31 cột */
+#reportDetail th, #reportDetail td {
+  padding:6px;
+  border:1px solid #e2e8f0;
+  text-align:center;
+  font-size:14px;
+}
+#reportDetail th {background:#f0f0f0;}
+#reportDetail td b {color:#007bff;}
+
 /* Responsive */
 @media(max-width:768px){
   .layout{flex-direction:column}
