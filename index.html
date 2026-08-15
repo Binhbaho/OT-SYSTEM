@@ -485,7 +485,7 @@ db.collection("employees").onSnapshot(snapshot=>{
 function loadOT() {
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
   let totalHour = 0;
-  let empTodaySet = new Set(); // dùng để đếm nhân viên duy nhất
+  let empTodaySet = new Set(); // để đếm nhân viên duy nhất
   let shiftStats = {
     1: { emp: 0, hour: 0 },
     2: { emp: 0, hour: 0 },
@@ -495,9 +495,7 @@ function loadOT() {
 
   db.collection("overtime").onSnapshot(snapshot => {
     const tbody = document.getElementById("otTable");
-    if (tbody) {
-      tbody.innerHTML = "";
-    }
+    if (tbody) tbody.innerHTML = "";
     let i = 1;
 
     snapshot.forEach(doc => {
@@ -513,7 +511,7 @@ function loadOT() {
 
       // Nếu là ngày hiện hành thì tính riêng
       if (o.date && o.date.trim() === today) {
-        empTodaySet.add(o.emp); // chỉ thêm mã nhân viên duy nhất
+        empTodaySet.add(o.emp); // thêm nhân viên duy nhất
         if (shiftStats[o.shift]) {
           shiftStats[o.shift].emp++;
           shiftStats[o.shift].hour += hours;
@@ -556,6 +554,7 @@ function loadOT() {
     }
   });
 }
+
 
 
 
