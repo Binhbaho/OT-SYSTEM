@@ -485,41 +485,34 @@ db.collection("employees").onSnapshot(snapshot=>{
 function loadOT() {
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
   let totalHour = 0;
-  let totalEmpToday = 0;
-  let shiftStats = {
-    1: { emp: 0, hour: 0 },
-    2: { emp: 0, hour: 0 },
-    3: { emp: 0, hour: 0 },
-    4: { emp: 0, hour: 0 }
-  };
+  let empTodaySet = new Set();
+  let shiftStats = {1:{emp:0,hour:0},2:{emp:0,hour:0},3:{emp:0,hour:0},4:{emp:0,hour:0}};
 
   db.collection("overtime").onSnapshot(snapshot => {
     const tbody = document.getElementById("otTable");
-    if (tbody) {
-      tbody.innerHTML = "";
-    }
+    if (tbody) tbody.innerHTML = "";
     let i = 1;
 
     snapshot.forEach(doc => {
       const o = doc.data();
       let hours = 0;
       if (o.start && o.end) {
-        const s = new Date("1970-01-01T" + o.start + ":00");
-        const e = new Date("1970-01-01T" + o.end + ":00");
-        hours = (e - s) / 1000 / 3600;
+        const s = new Date("1970-01-01T"+o.start+":00");
+        let e = new Date("1970-01-01T"+o.end+":00");
+        if (e < s) e.setHours(e.getHours()+24);
+        hours = (e-s)/1000/3600;
         totalHour += hours;
       }
 
       // Nếu là ngày hiện hành thì tính riêng
-      if (o.date === today) {
-        totalEmpToday++;
+      if (o.date && o.date.trim() === today) {
+        empTodaySet.add(o.emp);
         if (shiftStats[o.shift]) {
           shiftStats[o.shift].emp++;
           shiftStats[o.shift].hour += hours;
         }
       }
 
-      // render bảng chi tiết nếu có
       if (tbody) {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -547,13 +540,14 @@ function loadOT() {
     document.getElementById("rHour").innerText = totalHour;
 
     // cập nhật số liệu hôm nay
-    document.getElementById("sOtToday").innerText = totalEmpToday;
+    document.getElementById("sOtToday").innerText = empTodaySet.size;
     for (let i = 1; i <= 4; i++) {
-      document.getElementById("sOtShift" + i).innerText = shiftStats[i].emp;
-      document.getElementById("sHourShift" + i).innerText = shiftStats[i].hour;
+      document.getElementById("sOtShift"+i).innerText = shiftStats[i].emp;
+      document.getElementById("sHourShift"+i).innerText = shiftStats[i].hour;
     }
   });
 }
+
 
 // Hàm sửa: lấy dữ liệu từ Firestore và đưa lên form
 function editOT(id) {
