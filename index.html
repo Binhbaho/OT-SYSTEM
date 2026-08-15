@@ -76,38 +76,55 @@ tr:hover{background:#f1f5f9}
       <div class="header"><span id="welcome"></span></div>
       <div class="content">
 
-        <!-- Dashboard -->
-        
+<!-- Dashboard -->
 <div id="home" class="page">
   <h2>Dashboard</h2>
-  
-  <!-- Dòng tổng quan -->
-  <div class="cards" style="display:flex; gap:20px; margin-bottom:15px;">
-    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
-    <div class="stat"><h3>Tổng nhân viên tăng ca (hôm nay)</h3><h1 id="sOtToday">0</h1></div>
+
+  <!-- Hàng đầu tiên -->
+  <div class="cards" style="display:flex; gap:20px; margin-bottom:20px;">
+    <div class="stat" style="flex:1;">
+      <h3>Tổng nhân viên</h3>
+      <h1 id="sEmp">0</h1>
+    </div>
+    <div class="stat" style="flex:1;">
+      <h3>Tổng nhân viên tăng ca (hôm nay)</h3>
+      <h1 id="sOtToday">0</h1>
+    </div>
+  </div>
+
+  <!-- Tiêu đề cho bảng ca -->
+  <div class="cards" style="display:flex; gap:20px; font-weight:bold; background:#f0f0f0; padding:10px;">
+    <div style="flex:1;">Ca</div>
+    <div style="flex:1;">Tổng nhân viên tăng ca</div>
+    <div style="flex:1;">Tổng giờ tăng ca</div>
   </div>
 
   <!-- Các dòng theo từng ca -->
-  <div class="cards">
-    <div class="stat"><h3>Ca 1 - Nhân viên tăng ca</h3><h1 id="sOtShift1">0</h1></div>
-    <div class="stat"><h3>Ca 1 - Tổng giờ tăng ca</h3><h1 id="sHourShift1">0</h1></div>
+  <div class="cards" style="display:flex; gap:20px; padding:10px;">
+    <div style="flex:1;">Ca 1</div>
+    <div style="flex:1;" id="sOtShift1">0</div>
+    <div style="flex:1;" id="sHourShift1">0</div>
   </div>
 
-  <div class="cards">
-    <div class="stat"><h3>Ca 2 - Nhân viên tăng ca</h3><h1 id="sOtShift2">0</h1></div>
-    <div class="stat"><h3>Ca 2 - Tổng giờ tăng ca</h3><h1 id="sHourShift2">0</h1></div>
+  <div class="cards" style="display:flex; gap:20px; padding:10px;">
+    <div style="flex:1;">Ca 2</div>
+    <div style="flex:1;" id="sOtShift2">0</div>
+    <div style="flex:1;" id="sHourShift2">0</div>
   </div>
 
-  <div class="cards">
-    <div class="stat"><h3>Ca 3 - Nhân viên tăng ca</h3><h1 id="sOtShift3">0</h1></div>
-    <div class="stat"><h3>Ca 3 - Tổng giờ tăng ca</h3><h1 id="sHourShift3">0</h1></div>
+  <div class="cards" style="display:flex; gap:20px; padding:10px;">
+    <div style="flex:1;">Ca 3</div>
+    <div style="flex:1;" id="sOtShift3">0</div>
+    <div style="flex:1;" id="sHourShift3">0</div>
   </div>
 
-  <div class="cards">
-    <div class="stat"><h3>Ca 4 - Nhân viên tăng ca</h3><h1 id="sOtShift4">0</h1></div>
-    <div class="stat"><h3>Ca 4 - Tổng giờ tăng ca</h3><h1 id="sHourShift4">0</h1></div>
+  <div class="cards" style="display:flex; gap:20px; padding:10px;">
+    <div style="flex:1;">Ca 4</div>
+    <div style="flex:1;" id="sOtShift4">0</div>
+    <div style="flex:1;" id="sHourShift4">0</div>
   </div>
 </div>
+
 
 
         <!-- Employees -->
