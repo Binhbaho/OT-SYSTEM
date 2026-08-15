@@ -57,24 +57,6 @@ th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
 .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 
-/* Bảng báo cáo chi tiết */
-#reportDetail {
-  width: 100%;
-  border-collapse: collapse;
-}
-#reportDetail th, #reportDetail td {
-  padding: 6px;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-  font-size: 14px;
-}
-#reportDetail th {
-  background: #f0f0f0;
-}
-#reportDetail td b {
-  color: #007bff;
-}
-
 /* Responsive */
 @media(max-width:768px){
   .layout{flex-direction:column}
@@ -82,13 +64,11 @@ tr:hover{background:#f1f5f9}
   .row{grid-template-columns:1fr}
   .cards{flex-direction:column}
 
-  .shift-header{display:none}
+  /* Bảng ca hiển thị dọc */
+  .shift-header{display:none} /* ẩn tiêu đề ngang */
   .shift-row{flex-direction:column;text-align:left}
   .shift-row div{flex:none;width:100%;padding:6px 0;border-bottom:1px solid #eee}
   .shift-row div:first-child{font-weight:bold;background:#f0f0f0;padding:8px;border-radius:4px}
-
-  .list-wrap {overflow-x:auto}
-  #reportDetail {min-width:600px}
 }
 </style>
 </head>
@@ -257,7 +237,8 @@ tr:hover{background:#f1f5f9}
       <tr>
         <th>Mã NV</th>
         <th>Tên NV</th>
-        <!-- JS sẽ thêm các cột ngày 1-31 + Total -->
+        <!-- Tạo cột từ ngày 1 đến 31 -->
+        <!-- Có thể tạo động bằng JS -->
       </tr>
     </thead>
     <tbody>
@@ -265,7 +246,6 @@ tr:hover{background:#f1f5f9}
     </tbody>
   </table>
 </div>
-
 
         </div>
 
@@ -732,30 +712,26 @@ function filterReport() {
     document.getElementById("rEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
     // render bảng chi tiết
-const tbody = document.querySelector("#reportDetail tbody");
-const thead = document.querySelector("#reportDetail thead tr");
+    const tbody = document.querySelector("#reportDetail tbody");
+    const thead = document.querySelector("#reportDetail thead tr");
 
-// tạo cột ngày 1-31 + Total
-thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
-for (let d = 1; d <= 31; d++) {
-  thead.innerHTML += `<th>${d}</th>`;
-}
-thead.innerHTML += "<th>Total</th>";
+    // tạo cột ngày 1-31
+    thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+    for (let d = 1; d <= 31; d++) {
+      thead.innerHTML += `<th>${d}</th>`;
+    }
 
-tbody.innerHTML = "";
-Object.keys(dataMap).forEach(empCode => {
-  const row = document.createElement("tr");
-  let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
-  let totalEmpHour = 0;
-  for (let d = 1; d <= 31; d++) {
-    const val = dataMap[empCode].days[d] || "";
-    if (val) totalEmpHour += val;
-    html += `<td>${val}</td>`;
-  }
-  html += `<td><b>${totalEmpHour}</b></td>`;
-  row.innerHTML = html;
-  tbody.appendChild(row);
-});
+    tbody.innerHTML = "";
+    Object.keys(dataMap).forEach(empCode => {
+      const row = document.createElement("tr");
+      let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
+      for (let d = 1; d <= 31; d++) {
+        html += `<td>${dataMap[empCode].days[d] || ""}</td>`;
+      }
+      row.innerHTML = html;
+      tbody.appendChild(row);
+    });
+  });
 }
 
 
