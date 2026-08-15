@@ -153,9 +153,6 @@ tr:hover{background:#f1f5f9}
     <div style="flex:1;" id="sHourShift4">0</div>
   </div>
 </div>
-
-
-
         <!-- Employees -->
         <div id="employees" class="page hidden">
           <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
@@ -225,25 +222,31 @@ tr:hover{background:#f1f5f9}
   <button onclick="filterReport()">Lọc</button>
   <button onclick="resetReport()">Reset</button>
 </div>
-          <div class="cards">
-            <div class="stat"><h3>Tổng nhân viên</h3><h1 id="rEmp"></h1></div>
-            <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
-            <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
-          </div>
-        <div class="list-wrap">
-  <h3>Bảng chi tiết tăng ca theo tháng</h3>
-  <table id="reportDetail">
-    <thead>
-      <tr>
-        <th>Mã NV</th>
-        <th>Tên NV</th>
-        <!-- JS sẽ thêm các cột ngày 1-31 + Total -->
-      </tr>
-    </thead>
-    <tbody>
-      <!-- JS sẽ render dữ liệu -->
-    </tbody>
-  </table>
+          <div class="table-wrap">
+  <div class="cards">
+    <div class="stat">
+      <h3>Tổng nhân viên</h3>
+      <h1 id="rEmp">0</h1>
+    </div>
+    <div class="stat">
+      <h3>Tổng nhân viên tăng ca</h3>
+      <h1 id="rOtEmp">0</h1>
+    </div>
+    <div class="stat">
+      <h3>Tổng giờ</h3>
+      <h1 id="rHour">0</h1>
+    </div>
+  </div>
+
+  <div class="list-wrap">
+    <h3>Bảng chi tiết tăng ca theo tháng</h3>
+    <table id="reportDetail">
+      <thead>
+        <tr></tr> <!-- để JS thêm cột -->
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 
 
@@ -668,7 +671,6 @@ async function saveOT(){
     }
   });
 }
-// ================== Báo cáo ==================
 function filterReport() {
   const start = document.getElementById("filterStart").value;
   const end = document.getElementById("filterEnd").value;
@@ -676,18 +678,15 @@ function filterReport() {
 
   let totalHour = 0;
   let empSet = new Set();
-  let dataMap = {}; // { emp: { name:..., days:{1:hour,...}} }
+  let dataMap = {};
 
   db.collection("overtime").get().then(snapshot => {
     snapshot.forEach(doc => {
       const o = doc.data();
-
-      // kiểm tra ngày trong khoảng
       if (start && o.date < start) return;
       if (end && o.date > end) return;
       if (emp && o.emp !== emp) return;
 
-      // tính giờ
       let hours = 0;
       if (o.start && o.end) {
         const s = new Date("1970-01-01T" + o.start + ":00");
@@ -698,9 +697,7 @@ function filterReport() {
 
       empSet.add(o.emp);
 
-      // lấy ngày trong tháng
-      const day = parseInt(o.date.split("-")[2]); // yyyy-mm-dd -> lấy dd
-
+      const day = parseInt(o.date.split("-")[2]);
       if (!dataMap[o.emp]) {
         dataMap[o.emp] = { name: o.empName || "", days: {} };
       }
@@ -712,15 +709,14 @@ function filterReport() {
     document.getElementById("rOtEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
     // render bảng chi tiết
+    const theadRow = document.querySelector("#reportDetail thead tr");
     const tbody = document.querySelector("#reportDetail tbody");
-    const thead = document.querySelector("#reportDetail thead tr");
 
-    // tạo cột ngày 1-31 + Total
-    thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+    theadRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
     for (let d = 1; d <= 31; d++) {
-      thead.innerHTML += `<th>${d}</th>`;
+      theadRow.innerHTML += `<th>${d}</th>`;
     }
-    thead.innerHTML += "<th>Total</th>";
+    theadRow.innerHTML += "<th>Total</th>";
 
     tbody.innerHTML = "";
     Object.keys(dataMap).forEach(empCode => {
@@ -738,7 +734,7 @@ function filterReport() {
     });
   });
 
-  // tổng nhân viên toàn hệ thống (chạy riêng, không ảnh hưởng render bảng)
+  // tổng nhân viên toàn hệ thống
   db.collection("employees").get().then(empSnap => {
     document.getElementById("rEmp").innerText = empSnap.size;
   });
@@ -749,16 +745,13 @@ function resetReport() {
   document.getElementById("filterEnd").value = "";
   document.getElementById("filterEmp").value = "";
 
-  // reset hiển thị
   document.getElementById("rOtEmp").innerText = 0;
   document.getElementById("rHour").innerText = 0;
 
-  // tổng nhân viên toàn hệ thống vẫn hiển thị
   db.collection("employees").get().then(empSnap => {
     document.getElementById("rEmp").innerText = empSnap.size;
   });
 
-  // xóa bảng chi tiết
   const tbody = document.querySelector("#reportDetail tbody");
   tbody.innerHTML = "";
 }
