@@ -707,48 +707,60 @@ function filterReport() {
       dataMap[o.emp].days[day] = (dataMap[o.emp].days[day] || 0) + hours;
     });
 
-    // cập nhật tổng
+    // cập nhật tổng giờ và tổng nhân viên tăng ca
     document.getElementById("rHour").innerText = totalHour;
-    document.getElementById("rEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
+    document.getElementById("rOtEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
-// render bảng chi tiết
-const tbody = document.querySelector("#reportDetail tbody");
-const thead = document.querySelector("#reportDetail thead tr");
+    // tổng nhân viên toàn hệ thống
+    db.collection("employees").get().then(empSnap => {
+      document.getElementById("rEmp").innerText = empSnap.size;
+    });
 
-// tạo cột ngày 1-31 + Total
-thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
-for (let d = 1; d <= 31; d++) {
-  thead.innerHTML += `<th>${d}</th>`;
-}
-thead.innerHTML += "<th>Total</th>";
+    // render bảng chi tiết
+    const tbody = document.querySelector("#reportDetail tbody");
+    const thead = document.querySelector("#reportDetail thead tr");
 
-tbody.innerHTML = "";
-Object.keys(dataMap).forEach(empCode => {
-  const row = document.createElement("tr");
-  let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
-  let totalEmpHour = 0;
-  for (let d = 1; d <= 31; d++) {
-    const val = dataMap[empCode].days[d] || "";
-    if (val) totalEmpHour += val;
-    html += `<td>${val}</td>`;
-  }
-  html += `<td><b>${totalEmpHour}</b></td>`;
-  row.innerHTML = html;
-  tbody.appendChild(row);
-});
+    // tạo cột ngày 1-31 + Total
+    thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+    for (let d = 1; d <= 31; d++) {
+      thead.innerHTML += `<th>${d}</th>`;
+    }
+    thead.innerHTML += "<th>Total</th>";
 
+    tbody.innerHTML = "";
+    Object.keys(dataMap).forEach(empCode => {
+      const row = document.createElement("tr");
+      let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
+      let totalEmpHour = 0;
+      for (let d = 1; d <= 31; d++) {
+        const val = dataMap[empCode].days[d] || "";
+        if (val) totalEmpHour += val;
+        html += `<td>${val}</td>`;
+      }
+      html += `<td><b>${totalEmpHour}</b></td>`;
+      row.innerHTML = html;
+      tbody.appendChild(row);
+    });
   });
 }
 
-
-  
 function resetReport() {
   document.getElementById("filterStart").value = "";
   document.getElementById("filterEnd").value = "";
   document.getElementById("filterEmp").value = "";
 
-  // gọi lại loadOT hoặc loadReport để hiển thị dữ liệu gốc
-  loadOT(); // hoặc loadReport() nếu bạn có hàm riêng cho báo cáo
+  // reset hiển thị
+  document.getElementById("rOtEmp").innerText = 0;
+  document.getElementById("rHour").innerText = 0;
+
+  // tổng nhân viên toàn hệ thống vẫn hiển thị
+  db.collection("employees").get().then(empSnap => {
+    document.getElementById("rEmp").innerText = empSnap.size;
+  });
+
+  // xóa bảng chi tiết
+  const tbody = document.querySelector("#reportDetail tbody");
+  tbody.innerHTML = "";
 }
 
 </script>
