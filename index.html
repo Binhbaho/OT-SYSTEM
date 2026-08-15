@@ -655,32 +655,44 @@ async function saveOT(){
 function filterReport() {
   const start = document.getElementById("filterStart").value;
   const end = document.getElementById("filterEnd").value;
-  const emp = document.getElementById("filterEmp").value.toLowerCase();
+  const emp = document.getElementById("filterEmp").value.trim();
 
-  const tbody = document.getElementById("reportTable"); // bảng báo cáo chi tiết
-  const rows = tbody.rows;
-  let stt = 1;
+  let totalHour = 0;
+  let empSet = new Set();
 
-  for (let i = 0; i < rows.length; i++) {
-    const maNV = rows[i].cells[1].innerText.toLowerCase();
-    const ngay = rows[i].cells[4].innerText; // cột Ngày
-    let match = true;
+  db.collection("overtime").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const o = doc.data();
 
-    // lọc theo Mã NV
-    if (emp && !maNV.includes(emp)) match = false;
+      // kiểm tra ngày trong khoảng
+      if (start && o.date < start) return;
+      if (end && o.date > end) return;
 
-    // lọc theo khoảng ngày
-    if (start && ngay < start) match = false;
-    if (end && ngay > end) match = false;
+      // nếu có mã NV thì lọc theo mã
+      if (emp && o.emp !== emp) return;
 
-    if (match) {
-      rows[i].style.display = "";
-      rows[i].cells[0].innerText = stt++; // cập nhật lại STT
+      if (o.start && o.end) {
+        const s = new Date("1970-01-01T" + o.start + ":00");
+        const e = new Date("1970-01-01T" + o.end + ":00");
+        totalHour += (e - s) / 1000 / 3600;
+      }
+
+      empSet.add(o.emp);
+    });
+
+    // cập nhật giao diện
+    document.getElementById("rHour").innerText = totalHour;
+
+    if (emp) {
+      // nếu lọc theo mã NV thì tổng nhân viên = 1
+      document.getElementById("rEmp").innerText = empSet.size > 0 ? 1 : 0;
     } else {
-      rows[i].style.display = "none";
+      // nếu không chọn mã NV thì tổng nhân viên = số NV có tăng ca trong khoảng
+      document.getElementById("rEmp").innerText = empSet.size;
     }
-  }
+  });
 }
+
   
 function resetReport() {
   document.getElementById("filterStart").value = "";
