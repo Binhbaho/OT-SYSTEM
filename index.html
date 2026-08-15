@@ -121,7 +121,7 @@ tr:hover{background:#f1f5f9}
             </div>
             <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
             <button onclick="saveOT()">Lưu</button>
-            <div class="search-bar">
+            <div class="search-bar" style="margin:10px 0;">
   <input type="text" id="searchEmp" placeholder="Mã NV">
   <input type="text" id="searchShift" placeholder="Ca">
   <input type="date" id="searchDate">
@@ -366,14 +366,16 @@ function deleteOT(id) {
     db.collection("overtime").doc(id).delete();
   }
 }
+  // hàm tìm kiếm tăng ca
 function searchOT() {
   const emp = document.getElementById("searchEmp").value.toLowerCase();
   const shift = document.getElementById("searchShift").value.toLowerCase();
-  const date = document.getElementById("searchDate").value; // dạng yyyy-mm-dd
+  const date = document.getElementById("searchDate").value; // yyyy-mm-dd
   const work = document.getElementById("searchWork").value.toLowerCase();
 
   const table = document.getElementById("otTable");
   const rows = table.rows;
+  let stt = 1;
 
   for (let i = 0; i < rows.length; i++) {
     const maNV = rows[i].cells[1].innerText.toLowerCase();
@@ -387,9 +389,15 @@ function searchOT() {
     if (date && ngay !== date) match = false;
     if (work && !congViec.includes(work)) match = false;
 
-    rows[i].style.display = match ? "" : "none";
+    if (match) {
+      rows[i].style.display = "";
+      rows[i].cells[0].innerText = stt++; // cập nhật lại STT cho dòng hiển thị
+    } else {
+      rows[i].style.display = "none";
+    }
   }
 }
+
 
 
 // ================== Lịch tăng ca của nhân viên ==================
