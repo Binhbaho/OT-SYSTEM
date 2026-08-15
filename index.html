@@ -936,7 +936,29 @@ function resetReport() {
   const tbody = document.querySelector("#reportDetail tbody");
   tbody.innerHTML = "";
 }
+function renderTotalOT(){
+  // Sinh lại cột nếu chưa có
+  const headerRow = document.querySelector("#reportDetail thead tr");
+  if (headerRow && headerRow.children.length === 0) {
+    headerRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+    for (let d=1; d<=31; d++) {
+      headerRow.innerHTML += `<th>${d}</th>`;
+    }
+    headerRow.innerHTML += "<th>Total</th>";
+  }
+  // Gọi tính toán
+  calcTotal();
+}
 
+// Chỉnh showPage để gọi renderTotalOT khi mở trang nhân viên
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  if(id==="totalOvertime" && currentUser && currentUser.role==="emp"){
+    renderTotalOT();
+  }
+}
+  
 </script>
 </body>
 </html>
