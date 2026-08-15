@@ -711,11 +711,6 @@ function filterReport() {
     document.getElementById("rHour").innerText = totalHour;
     document.getElementById("rOtEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
-    // tổng nhân viên toàn hệ thống (không ảnh hưởng render bảng)
-    db.collection("employees").get().then(empSnap => {
-      document.getElementById("rEmp").innerText = empSnap.size;
-    });
-
     // render bảng chi tiết
     const tbody = document.querySelector("#reportDetail tbody");
     const thead = document.querySelector("#reportDetail thead tr");
@@ -742,6 +737,11 @@ function filterReport() {
       tbody.appendChild(row);
     });
   });
+
+  // tổng nhân viên toàn hệ thống (chạy riêng, không ảnh hưởng render bảng)
+  db.collection("employees").get().then(empSnap => {
+    document.getElementById("rEmp").innerText = empSnap.size;
+  });
 }
 
 function resetReport() {
@@ -762,8 +762,6 @@ function resetReport() {
   const tbody = document.querySelector("#reportDetail tbody");
   tbody.innerHTML = "";
 }
-  
-
 
 </script>
 </body>
