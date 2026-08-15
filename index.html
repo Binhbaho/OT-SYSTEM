@@ -55,25 +55,11 @@ button:hover{background:#1e40af}
 .list-wrap table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
-.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 
-/* Responsive */
-@media(max-width:768px){
-  .layout{flex-direction:column}
-  .sidebar{width:100%}
-  .row{grid-template-columns:1fr}
-  .cards{flex-direction:column}
-
-  /* Bảng ca hiển thị dọc */
-  .shift-header{display:none} /* ẩn tiêu đề ngang */
-  .shift-row{flex-direction:column;text-align:left}
-  .shift-row div{flex:none;width:100%;padding:6px 0;border-bottom:1px solid #eee}
-  .shift-row div:first-child{font-weight:bold;background:#f0f0f0;padding:8px;border-radius:4px}
-  
-   #reportDetail {
+/* Bảng báo cáo chi tiết */
+#reportDetail {
   width: 100%;
   border-collapse: collapse;
-  overflow-x: auto;
 }
 #reportDetail th, #reportDetail td {
   padding: 6px;
@@ -87,6 +73,23 @@ tr:hover{background:#f1f5f9}
 #reportDetail td b {
   color: #007bff;
 }
+
+/* Responsive */
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%}
+  .row{grid-template-columns:1fr}
+  .cards{flex-direction:column}
+
+  /* Bảng ca hiển thị dọc */
+  .shift-header{display:none}
+  .shift-row{flex-direction:column;text-align:left}
+  .shift-row div{flex:none;width:100%;padding:6px 0;border-bottom:1px solid #eee}
+  .shift-row div:first-child{font-weight:bold;background:#f0f0f0;padding:8px;border-radius:4px}
+
+  /* Cho bảng báo cáo chi tiết scroll ngang trên mobile */
+  .list-wrap {overflow-x:auto}
+  #reportDetail {min-width:600px}
 }
 </style>
 </head>
