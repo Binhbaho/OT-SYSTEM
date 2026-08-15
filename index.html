@@ -483,9 +483,9 @@ db.collection("employees").onSnapshot(snapshot=>{
 
 // ================== QUẢN LÝ TĂNG CA ==================
 function loadOT() {
-  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+  const today = getTodayLocal(); // ngày hiện hành theo giờ địa phương
   let totalHour = 0;
-  let empTodaySet = new Set(); // để đếm nhân viên duy nhất
+  let empTodaySet = new Set();
   let shiftStats = {
     1: { emp: 0, hour: 0 },
     2: { emp: 0, hour: 0 },
@@ -511,14 +511,13 @@ function loadOT() {
 
       // Nếu là ngày hiện hành thì tính riêng
       if (o.date && o.date.trim() === today) {
-        empTodaySet.add(o.emp); // thêm nhân viên duy nhất
+        empTodaySet.add(o.emp);
         if (shiftStats[o.shift]) {
           shiftStats[o.shift].emp++;
           shiftStats[o.shift].hour += hours;
         }
       }
 
-      // render bảng chi tiết nếu có
       if (tbody) {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -554,6 +553,15 @@ function loadOT() {
     }
   });
 }
+
+function getTodayLocal() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 
 
 
