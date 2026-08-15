@@ -629,36 +629,47 @@ function renderMyOT() {
   const tbody = document.getElementById("myTable");
   tbody.innerHTML = "";
 
-  db.collection("overtime").get().then(snapshot => {
-    snapshot.forEach(doc => {
-      const o = doc.data();
+  db.collection("overtime")
+    .where("emp", "==", currentUser.code)
+    .get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        const o = doc.data();
 
-      // lọc theo ngày
-      if (start && end) {
-        if (o.date < start || o.date > end) return;
-      } else if (start) {
-        if (o.date !== start) return;
+        // lọc theo ngày
+        if (start && end) {
+          if (o.date < start || o.date > end) return;
+        } else if (start) {
+          if (o.date !== start) return;
+        }
+
+        // lọc theo từ khóa
+        if (keyword) {
+          const check = o.date.toLowerCase().includes(keyword) || o.work.toLowerCase().includes(keyword);
+          if (!check) return;
+        }
+
+        // render dòng
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${o.date}</td>
+          <td>${o.shift}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Nếu không có dữ liệu thì hiển thị thông báo
+      if (!tbody.hasChildNodes()) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="5">Không có dữ liệu trong khoảng ngày này</td>`;
+        tbody.appendChild(row);
       }
-
-      // lọc theo từ khóa (ngày hoặc công việc)
-      if (keyword) {
-        const check = o.date.toLowerCase().includes(keyword) || o.work.toLowerCase().includes(keyword);
-        if (!check) return;
-      }
-
-      // render dòng
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${o.date}</td>
-        <td>${o.shift}</td>
-        <td>${o.start}</td>
-        <td>${o.end}</td>
-        <td>${o.work}</td>
-      `;
-      tbody.appendChild(row);
     });
-  });
 }
+
 
 function resetMyOT() {
   // xóa filter
