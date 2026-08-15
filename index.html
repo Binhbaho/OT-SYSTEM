@@ -280,7 +280,7 @@ tr:hover{background:#f1f5f9}
 
         </div>
 
-        <!-- MyOvertime (Employee) -->
+        <!-- MyOvertime (nhân viên) -->
 <div id="myovertime" class="page hidden">
   <h2>Lịch tăng ca của tôi</h2>
 
@@ -309,14 +309,45 @@ tr:hover{background:#f1f5f9}
   </div>
 </div>
 
-        <!-- TotalOvertime -->
-        <div id="totalOvertime" class="page hidden">
-          <h2>Tổng thời gian tăng ca</h2>
-          <label>Từ ngày: <input type="date" id="fromDate"></label>
-          <label>Đến ngày: <input type="date" id="toDate"></label>
-          <button onclick="calculateOvertimeByRange()">Tính tổng giờ</button>
-          <p id="overtimeHours">Bạn đã tăng ca: 0 giờ</p>
-        </div>
+        <!-- TotalOvertime (nhân viên)-->
+        <div id="myTotal" class="page hidden">
+  <h2>Tổng thời gian tăng ca</h2>
+
+  <!-- Filter trên cùng một dòng -->
+  <div class="filter-bar" style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
+    <label>Từ ngày:</label>
+    <input type="date" id="totalStart">
+
+    <label>Đến ngày:</label>
+    <input type="date" id="totalEnd">
+
+    <span id="totalHour">Tổng giờ: 0</span>
+
+    <button onclick="calcTotal()">Lọc</button>
+    <button onclick="resetTotal()">Reset</button>
+  </div>
+
+  <!-- Bảng chi tiết từ ngày 1 đến 31 -->
+  <div class="table-wrap">
+    <table id="totalTable">
+      <thead>
+        <tr>
+          <th>Mã NV</th>
+          <th>Tên NV</th>
+          <!-- tạo 31 cột ngày -->
+          <script>
+            for (let d=1; d<=31; d++) {
+              document.write("<th>"+d+"</th>");
+            }
+          </script>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="totalBody"></tbody>
+    </table>
+  </div>
+</div>
+
 
       </div>
     </div>
@@ -658,23 +689,65 @@ function resetMyOT() {
 
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
-async function calculateOvertimeByRange(){
-  if(!currentUser||currentUser.role!=="emp")return;
-  const from=document.getElementById("fromDate").value;
-  const to=document.getElementById("toDate").value;
-  if(!from||!to){alert("Chọn khoảng ngày");return;}
-  const snap=await db.collection("overtime").where("emp","==",currentUser.code).get();
-  let total=0;
-  snap.forEach(doc=>{
-    const o=doc.data();
-    if(o.date&&o.date>=from&&o.date<=to&&o.start&&o.end){
-      const s=new Date("1970-01-01T"+o.start+":00");
-      const e=new Date("1970-01-01T"+o.end+":00");
-      total+=(e-s)/1000/3600;
+function calcTotal() {
+  const start = document.getElementById("totalStart").value;
+  const end = document.getElementById("totalEnd").value;
+  let totalHour = 0;
+  const tbody = document.getElementById("totalBody");
+  tbody.innerHTML = "";
+
+  db.collection("overtime").get().then(snapshot => {
+    const dataMap = {};
+    snapshot.forEach(doc => {
+      const o = doc.data();
+      const date = o.date; // nhớ chuẩn hóa yyyy-mm-dd
+      if (start && end) {
+        if (date < start || date > end) return;
+      } else if (start) {
+        if (date !== start) return;
+      }
+
+      // tính giờ
+      let hours = 0;
+      if (o.start && o.end) {
+        const s = new Date("1970-01-01T"+o.start+":00");
+        const e = new Date("1970-01-01T"+o.end+":00");
+        hours = (e-s)/1000/3600;
+        totalHour += hours;
+      }
+
+      const day = parseInt(date.split("-")[2]);
+      if (!dataMap[o.emp]) {
+        dataMap[o.emp] = { name:o.empName, days:{} };
+      }
+      dataMap[o.emp].days[day] = (dataMap[o.emp].days[day]||0)+hours;
+    });
+
+    // render bảng
+    for (const emp in dataMap) {
+      const row = document.createElement("tr");
+      let total=0;
+      let cells="";
+      for (let d=1; d<=31; d++) {
+        const h = dataMap[emp].days[d]||"";
+        if (h) total+=h;
+        cells += `<td>${h}</td>`;
+      }
+      row.innerHTML = `<td>${emp}</td><td>${dataMap[emp].name}</td>${cells}<td>${total}</td>`;
+      tbody.appendChild(row);
     }
+
+    document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
   });
-  document.getElementById("overtimeHours").innerText="Bạn đã tăng ca: "+total+" giờ";
 }
+
+function resetTotal() {
+  document.getElementById("totalStart").value="";
+  document.getElementById("totalEnd").value="";
+  document.getElementById("totalHour").innerText="Tổng giờ: 0";
+  document.getElementById("totalBody").innerHTML="";
+}
+
 
 // ================== Import tăng ca từ file CSV ==================
 document.getElementById("fileOT").addEventListener("change",async(event)=>{
