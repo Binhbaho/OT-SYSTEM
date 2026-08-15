@@ -578,7 +578,15 @@ function filterReport() {
     }
   }
 }
+  
+function resetReport() {
+  document.getElementById("filterStart").value = "";
+  document.getElementById("filterEnd").value = "";
+  document.getElementById("filterEmp").value = "";
 
+  // gọi lại loadOT hoặc loadReport để hiển thị dữ liệu gốc
+  loadOT(); // hoặc loadReport() nếu bạn có hàm riêng cho báo cáo
+}
 
 </script>
 </body>
