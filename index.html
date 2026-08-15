@@ -81,6 +81,19 @@ tr:hover{background:#f1f5f9}
   .shift-row{flex-direction:column;text-align:left}
   .shift-row div{flex:none;width:100%;padding:6px 0;border-bottom:1px solid #eee}
   .shift-row div:first-child{font-weight:bold;background:#f0f0f0;padding:8px;border-radius:4px}
+    /* Nút lọc và reset trên mobile */
+  .filter-buttons {
+    display: flex;
+    flex-direction: row;   /* xếp ngang */
+    gap: 10px;             /* khoảng cách giữa nút */
+    margin-top: 10px;
+  }
+  .filter-buttons button {
+    flex: 1;               /* mỗi nút chiếm đều không gian */
+    padding: 12px;
+    font-size: 16px;
+  }
+
 }
 </style>
 </head>
@@ -231,8 +244,11 @@ tr:hover{background:#f1f5f9}
   <label>Mã NV:</label>
   <input type="text" id="filterEmp" placeholder="Mã NV">
   
+  <div class="filter-buttons">
   <button onclick="filterReport()">Lọc</button>
   <button onclick="resetReport()">Reset</button>
+</div>
+
 </div>
           <div class="table-wrap">
   <div class="cards">
