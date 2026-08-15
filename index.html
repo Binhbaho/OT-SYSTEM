@@ -230,15 +230,14 @@ tr:hover{background:#f1f5f9}
             <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
             <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
           </div>
-          <div class="list-wrap">
+        <div class="list-wrap">
   <h3>Bảng chi tiết tăng ca theo tháng</h3>
   <table id="reportDetail">
     <thead>
       <tr>
         <th>Mã NV</th>
         <th>Tên NV</th>
-        <!-- Tạo cột từ ngày 1 đến 31 -->
-        <!-- Có thể tạo động bằng JS -->
+        <!-- JS sẽ thêm các cột ngày 1-31 + Total -->
       </tr>
     </thead>
     <tbody>
@@ -246,6 +245,7 @@ tr:hover{background:#f1f5f9}
     </tbody>
   </table>
 </div>
+
 
         </div>
 
@@ -711,26 +711,32 @@ function filterReport() {
     document.getElementById("rHour").innerText = totalHour;
     document.getElementById("rEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
-    // render bảng chi tiết
-    const tbody = document.querySelector("#reportDetail tbody");
-    const thead = document.querySelector("#reportDetail thead tr");
+// render bảng chi tiết
+const tbody = document.querySelector("#reportDetail tbody");
+const thead = document.querySelector("#reportDetail thead tr");
 
-    // tạo cột ngày 1-31
-    thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
-    for (let d = 1; d <= 31; d++) {
-      thead.innerHTML += `<th>${d}</th>`;
-    }
+// tạo cột ngày 1-31 + Total
+thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+for (let d = 1; d <= 31; d++) {
+  thead.innerHTML += `<th>${d}</th>`;
+}
+thead.innerHTML += "<th>Total</th>";
 
-    tbody.innerHTML = "";
-    Object.keys(dataMap).forEach(empCode => {
-      const row = document.createElement("tr");
-      let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
-      for (let d = 1; d <= 31; d++) {
-        html += `<td>${dataMap[empCode].days[d] || ""}</td>`;
-      }
-      row.innerHTML = html;
-      tbody.appendChild(row);
-    });
+tbody.innerHTML = "";
+Object.keys(dataMap).forEach(empCode => {
+  const row = document.createElement("tr");
+  let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
+  let totalEmpHour = 0;
+  for (let d = 1; d <= 31; d++) {
+    const val = dataMap[empCode].days[d] || "";
+    if (val) totalEmpHour += val;
+    html += `<td>${val}</td>`;
+  }
+  html += `<td><b>${totalEmpHour}</b></td>`;
+  row.innerHTML = html;
+  tbody.appendChild(row);
+});
+
   });
 }
 
