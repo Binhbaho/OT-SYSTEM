@@ -281,25 +281,32 @@ tr:hover{background:#f1f5f9}
         </div>
 
         <!-- MyOvertime (Employee) -->
-        <div id="myovertime" class="page hidden">
-          <h2>Lịch tăng ca của tôi</h2>
-          <div class="report-filter" style="display:flex; gap:10px; margin:15px 0;">
-  <label>Từ ngày:</label>
-  <input type="date" id="myStart">
+<div id="myovertime" class="page hidden">
+  <h2>Lịch tăng ca của tôi</h2>
 
-  <label>Đến ngày:</label>
-  <input type="date" id="myEnd">
+  <div class="report-filter" style="display:flex; gap:10px; margin:15px 0;">
+    <label>Từ ngày:</label>
+    <input type="date" id="myStart">
 
-  <button onclick="renderMyOT()">Lọc</button>
+    <label>Đến ngày:</label>
+    <input type="date" id="myEnd">
+
+    <button onclick="renderMyOT()">Lọc</button>
+  </div>
+
+  <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th>
+        </tr>
+      </thead>
+      <tbody id="myTable"></tbody>
+    </table>
+  </div>
 </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th></tr></thead>
-              <tbody id="myTable"></tbody>
-            </table>
-          </div>
-        </div>
 
         <!-- TotalOvertime -->
         <div id="totalOvertime" class="page hidden">
@@ -602,8 +609,11 @@ function renderMyOT() {
         if (o.date !== start) return;
       }
 
-      // lọc theo từ khóa (công việc)
-      if (keyword && !o.job.toLowerCase().includes(keyword)) return;
+      // lọc theo từ khóa (ngày hoặc công việc)
+      if (keyword) {
+        const check = o.date.toLowerCase().includes(keyword) || o.job.toLowerCase().includes(keyword);
+        if (!check) return;
+      }
 
       // render dòng
       const row = document.createElement("tr");
