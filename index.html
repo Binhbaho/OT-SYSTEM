@@ -548,6 +548,36 @@ async function saveOT(){
     }
   });
 }
+  // ================== Báo cáo ==================
+function filterReport() {
+  const start = document.getElementById("filterStart").value;
+  const end = document.getElementById("filterEnd").value;
+  const emp = document.getElementById("filterEmp").value.toLowerCase();
+
+  const tbody = document.getElementById("reportTable"); // bảng báo cáo chi tiết
+  const rows = tbody.rows;
+  let stt = 1;
+
+  for (let i = 0; i < rows.length; i++) {
+    const maNV = rows[i].cells[1].innerText.toLowerCase();
+    const ngay = rows[i].cells[4].innerText; // cột Ngày
+    let match = true;
+
+    // lọc theo Mã NV
+    if (emp && !maNV.includes(emp)) match = false;
+
+    // lọc theo khoảng ngày
+    if (start && ngay < start) match = false;
+    if (end && ngay > end) match = false;
+
+    if (match) {
+      rows[i].style.display = "";
+      rows[i].cells[0].innerText = stt++; // cập nhật lại STT
+    } else {
+      rows[i].style.display = "none";
+    }
+  }
+}
 
 
 </script>
