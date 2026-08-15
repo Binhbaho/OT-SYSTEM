@@ -230,6 +230,23 @@ tr:hover{background:#f1f5f9}
             <div class="stat"><h3>Tổng lịch</h3><h1 id="rOt"></h1></div>
             <div class="stat"><h3>Tổng giờ</h3><h1 id="rHour"></h1></div>
           </div>
+          <div class="list-wrap">
+  <h3>Bảng chi tiết tăng ca theo tháng</h3>
+  <table id="reportDetail">
+    <thead>
+      <tr>
+        <th>Mã NV</th>
+        <th>Tên NV</th>
+        <!-- Tạo cột từ ngày 1 đến 31 -->
+        <!-- Có thể tạo động bằng JS -->
+      </tr>
+    </thead>
+    <tbody>
+      <!-- JS sẽ render dữ liệu -->
+    </tbody>
+  </table>
+</div>
+
         </div>
 
         <!-- MyOvertime (Employee) -->
@@ -659,6 +676,7 @@ function filterReport() {
 
   let totalHour = 0;
   let empSet = new Set();
+  let dataMap = {}; // { emp: { name:..., days:{1:hour,...}} }
 
   db.collection("overtime").get().then(snapshot => {
     snapshot.forEach(doc => {
@@ -667,31 +685,55 @@ function filterReport() {
       // kiểm tra ngày trong khoảng
       if (start && o.date < start) return;
       if (end && o.date > end) return;
-
-      // nếu có mã NV thì lọc theo mã
       if (emp && o.emp !== emp) return;
 
+      // tính giờ
+      let hours = 0;
       if (o.start && o.end) {
         const s = new Date("1970-01-01T" + o.start + ":00");
         const e = new Date("1970-01-01T" + o.end + ":00");
-        totalHour += (e - s) / 1000 / 3600;
+        hours = (e - s) / 1000 / 3600;
+        totalHour += hours;
       }
 
       empSet.add(o.emp);
+
+      // lấy ngày trong tháng
+      const day = parseInt(o.date.split("-")[2]); // yyyy-mm-dd -> lấy dd
+
+      if (!dataMap[o.emp]) {
+        dataMap[o.emp] = { name: o.empName || "", days: {} };
+      }
+      dataMap[o.emp].days[day] = (dataMap[o.emp].days[day] || 0) + hours;
     });
 
-    // cập nhật giao diện
+    // cập nhật tổng
     document.getElementById("rHour").innerText = totalHour;
+    document.getElementById("rEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
-    if (emp) {
-      // nếu lọc theo mã NV thì tổng nhân viên = 1
-      document.getElementById("rEmp").innerText = empSet.size > 0 ? 1 : 0;
-    } else {
-      // nếu không chọn mã NV thì tổng nhân viên = số NV có tăng ca trong khoảng
-      document.getElementById("rEmp").innerText = empSet.size;
+    // render bảng chi tiết
+    const tbody = document.querySelector("#reportDetail tbody");
+    const thead = document.querySelector("#reportDetail thead tr");
+
+    // tạo cột ngày 1-31
+    thead.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
+    for (let d = 1; d <= 31; d++) {
+      thead.innerHTML += `<th>${d}</th>`;
     }
+
+    tbody.innerHTML = "";
+    Object.keys(dataMap).forEach(empCode => {
+      const row = document.createElement("tr");
+      let html = `<td>${empCode}</td><td>${dataMap[empCode].name}</td>`;
+      for (let d = 1; d <= 31; d++) {
+        html += `<td>${dataMap[empCode].days[d] || ""}</td>`;
+      }
+      row.innerHTML = html;
+      tbody.appendChild(row);
+    });
   });
 }
+
 
   
 function resetReport() {
