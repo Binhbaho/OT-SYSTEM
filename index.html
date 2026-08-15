@@ -77,14 +77,38 @@ tr:hover{background:#f1f5f9}
       <div class="content">
 
         <!-- Dashboard -->
-        <div id="home" class="page">
-          <h2>Dashboard</h2>
-          <div class="cards">
-            <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
-            <div class="stat"><h3>Tổng nhân viên tăng ca</h3><h1 id="sOt">0</h1></div>
-            <div class="stat"><h3>Tổng giờ tăng ca</h3><h1 id="sHour">0</h1></div>
-          </div>
-        </div>
+        
+<div id="home" class="page">
+  <h2>Dashboard</h2>
+  
+  <!-- Dòng tổng quan -->
+  <div class="cards" style="display:flex; gap:20px; margin-bottom:15px;">
+    <div class="stat"><h3>Tổng nhân viên</h3><h1 id="sEmp">0</h1></div>
+    <div class="stat"><h3>Tổng nhân viên tăng ca (hôm nay)</h3><h1 id="sOtToday">0</h1></div>
+  </div>
+
+  <!-- Các dòng theo từng ca -->
+  <div class="cards">
+    <div class="stat"><h3>Ca 1 - Nhân viên tăng ca</h3><h1 id="sOtShift1">0</h1></div>
+    <div class="stat"><h3>Ca 1 - Tổng giờ tăng ca</h3><h1 id="sHourShift1">0</h1></div>
+  </div>
+
+  <div class="cards">
+    <div class="stat"><h3>Ca 2 - Nhân viên tăng ca</h3><h1 id="sOtShift2">0</h1></div>
+    <div class="stat"><h3>Ca 2 - Tổng giờ tăng ca</h3><h1 id="sHourShift2">0</h1></div>
+  </div>
+
+  <div class="cards">
+    <div class="stat"><h3>Ca 3 - Nhân viên tăng ca</h3><h1 id="sOtShift3">0</h1></div>
+    <div class="stat"><h3>Ca 3 - Tổng giờ tăng ca</h3><h1 id="sHourShift3">0</h1></div>
+  </div>
+
+  <div class="cards">
+    <div class="stat"><h3>Ca 4 - Nhân viên tăng ca</h3><h1 id="sOtShift4">0</h1></div>
+    <div class="stat"><h3>Ca 4 - Tổng giờ tăng ca</h3><h1 id="sHourShift4">0</h1></div>
+  </div>
+</div>
+
 
         <!-- Employees -->
         <div id="employees" class="page hidden">
@@ -138,8 +162,7 @@ tr:hover{background:#f1f5f9}
           </div>
         </div>
 
-        <!-- Report -->
-        
+        <!-- Report -->        
 
         <div id="report" class="page hidden">
           <h2>Báo cáo</h2>
@@ -319,42 +342,75 @@ db.collection("employees").onSnapshot(snapshot=>{
 
 // ================== QUẢN LÝ TĂNG CA ==================
 function loadOT() {
+  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+  let totalHour = 0;
+  let totalEmpToday = 0;
+  let shiftStats = {
+    1: { emp: 0, hour: 0 },
+    2: { emp: 0, hour: 0 },
+    3: { emp: 0, hour: 0 },
+    4: { emp: 0, hour: 0 }
+  };
+
   db.collection("overtime").onSnapshot(snapshot => {
     const tbody = document.getElementById("otTable");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    let i = 1, total = 0;
+    if (tbody) {
+      tbody.innerHTML = "";
+    }
+    let i = 1;
 
     snapshot.forEach(doc => {
       const o = doc.data();
+      let hours = 0;
       if (o.start && o.end) {
         const s = new Date("1970-01-01T" + o.start + ":00");
         const e = new Date("1970-01-01T" + o.end + ":00");
-        total += (e - s) / 1000 / 3600;
+        hours = (e - s) / 1000 / 3600;
+        totalHour += hours;
       }
 
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${i++}</td>
-        <td>${o.emp}</td>
-        <td>${o.empName || ""}</td>
-        <td>${o.shift}</td>
-        <td>${o.date}</td>
-        <td>${o.start}</td>
-        <td>${o.end}</td>
-        <td>${o.work}</td>
-        <td>
-          <button class="btn btn-warning btn-sm" onclick="editOT('${doc.id}')">Sửa</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteOT('${doc.id}')">Xóa</button>
-        </td>
-      `;
-      tbody.appendChild(row);
+      // Nếu là ngày hiện hành thì tính riêng
+      if (o.date === today) {
+        totalEmpToday++;
+        if (shiftStats[o.shift]) {
+          shiftStats[o.shift].emp++;
+          shiftStats[o.shift].hour += hours;
+        }
+      }
+
+      // render bảng chi tiết nếu có
+      if (tbody) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i++}</td>
+          <td>${o.emp}</td>
+          <td>${o.empName || ""}</td>
+          <td>${o.shift}</td>
+          <td>${o.date}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="editOT('${doc.id}')">Sửa</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteOT('${doc.id}')">Xóa</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
     });
 
+    // cập nhật số liệu tổng quan
     document.getElementById("sOt").innerText = snapshot.size;
     document.getElementById("rOt").innerText = snapshot.size;
-    document.getElementById("sHour").innerText = total;
-    document.getElementById("rHour").innerText = total;
+    document.getElementById("sHour").innerText = totalHour;
+    document.getElementById("rHour").innerText = totalHour;
+
+    // cập nhật số liệu hôm nay
+    document.getElementById("sOtToday").innerText = totalEmpToday;
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById("sOtShift" + i).innerText = shiftStats[i].emp;
+      document.getElementById("sHourShift" + i).innerText = shiftStats[i].hour;
+    }
   });
 }
 
