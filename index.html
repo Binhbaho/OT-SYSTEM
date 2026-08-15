@@ -350,7 +350,7 @@ async function login(){
     document.getElementById("app").style.display="block";
     document.getElementById("welcome").innerText="Xin chào Admin";
     document.getElementById("empMenu").style.display="none";
-    showPage("overtime");
+    showPage("home");
     loadEmployees();
     loadOT();
   }else{
@@ -612,7 +612,7 @@ function renderMyOT() {
 
       // lọc theo từ khóa (ngày hoặc công việc)
       if (keyword) {
-        const check = o.date.toLowerCase().includes(keyword) || o.job.toLowerCase().includes(keyword);
+        const check = o.date.toLowerCase().includes(keyword) || o.work.toLowerCase().includes(keyword);
         if (!check) return;
       }
 
@@ -623,7 +623,7 @@ function renderMyOT() {
         <td>${o.shift}</td>
         <td>${o.start}</td>
         <td>${o.end}</td>
-        <td>${o.job}</td>
+        <td>${o.work}</td>
       `;
       tbody.appendChild(row);
     });
