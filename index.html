@@ -122,19 +122,18 @@ tr:hover{background:#f1f5f9}
             <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
             <button onclick="saveOT()">Lưu</button>
             <div class="search-bar" style="display:flex; gap:8px; margin:10px 0;">
-  <input type="text" id="searchEmp" placeholder="Mã NV">
-  <input type="text" id="searchShift" placeholder="Ca">
-  <input type="date" id="searchDate">
-  <input type="text" id="searchWork" placeholder="Công việc">
-  <button onclick="searchOT()">Tìm kiếm</button>
-</div>
-
+              <input type="text" id="searchEmp" placeholder="Mã NV">
+              <input type="text" id="searchShift" placeholder="Ca">
+              <input type="date" id="searchDate">
+              <input type="text" id="searchWork" placeholder="Công việc">
+              <button onclick="searchOT()">Tìm kiếm</button>
+              <button onclick="resetSearch()">Reset</button>
+              </div>
 
             <table>
               <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
               <tbody id="otTable"></tbody>
-            </table>
-            
+            </table>            
 
           </div>
         </div>
@@ -371,7 +370,7 @@ function deleteOT(id) {
 function searchOT() {
   const emp = document.getElementById("searchEmp").value.toLowerCase();
   const shift = document.getElementById("searchShift").value.toLowerCase();
-  const date = document.getElementById("searchDate").value; // yyyy-mm-dd
+  const date = document.getElementById("searchDate").value;
   const work = document.getElementById("searchWork").value.toLowerCase();
 
   const table = document.getElementById("otTable");
@@ -381,7 +380,7 @@ function searchOT() {
   for (let i = 0; i < rows.length; i++) {
     const maNV = rows[i].cells[1].innerText.toLowerCase();
     const ca = rows[i].cells[3].innerText.toLowerCase();
-    const ngay = rows[i].cells[4].innerText; // chú ý format ngày
+    const ngay = rows[i].cells[4].innerText.trim();
     const congViec = rows[i].cells[7].innerText.toLowerCase();
 
     let match = true;
@@ -392,12 +391,28 @@ function searchOT() {
 
     if (match) {
       rows[i].style.display = "";
-      rows[i].cells[0].innerText = stt++; // cập nhật lại STT cho dòng hiển thị
+      rows[i].cells[0].innerText = stt++;
     } else {
       rows[i].style.display = "none";
     }
   }
 }
+function resetSearch() {
+  // Xóa nội dung trong các ô tìm kiếm
+  document.getElementById("searchEmp").value = "";
+  document.getElementById("searchShift").value = "";
+  document.getElementById("searchDate").value = "";
+  document.getElementById("searchWork").value = "";
+
+  // Hiển thị lại tất cả các dòng và cập nhật STT
+  const table = document.getElementById("otTable");
+  const rows = table.rows;
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.display = "";
+    rows[i].cells[0].innerText = i + 1;
+  }
+}
+
 
 
 
