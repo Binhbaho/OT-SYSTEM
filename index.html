@@ -707,61 +707,63 @@ function resetMyOT() {
   }
 
   function calcTotal() {
-    const start = document.getElementById("totalStart").value;
-    const end = document.getElementById("totalEnd").value;
-    let totalHour = 0;
-    const tbody = document.querySelector("#reportDetail tbody");
-    tbody.innerHTML = "";
+  const start = document.getElementById("totalStart").value;
+  const end = document.getElementById("totalEnd").value;
+  let totalHour = 0;
+  const tbody = document.querySelector("#reportDetail tbody");
+  tbody.innerHTML = "";
 
-    db.collection("overtime").get().then(snapshot => {
-      const dataMap = {};
-      snapshot.forEach(doc => {
-        const o = doc.data();
-        const date = normalizeDate(o.date);
+  db.collection("overtime").get().then(snapshot => {
+    const dataMap = {};
+    snapshot.forEach(doc => {
+      const o = doc.data();
+      const date = normalizeDate(o.date);
 
-        // lọc theo nhân viên đăng nhập
-        if (!currentUser || o.emp !== currentUser.code) return;
+      // lọc theo nhân viên đăng nhập (không phân biệt hoa/thường)
+      if (!currentUser) return;
+      if (o.emp.trim().toLowerCase() !== currentUser.code.trim().toLowerCase()) return;
 
-        // lọc theo khoảng ngày
-        if (start && end) {
-          if (date < start || date > end) return;
-        } else if (start) {
-          if (date !== start) return;
-        }
-
-        let hours = 0;
-        if (o.start && o.end) {
-          const s = new Date("1970-01-01T"+o.start+":00");
-          let e = new Date("1970-01-01T"+o.end+":00");
-          if (e < s) e.setHours(e.getHours()+24);
-          hours = (e-s)/1000/3600;
-          totalHour += hours;
-        }
-
-        const day = parseInt(date.split("-")[2]);
-        if (!dataMap[o.emp]) {
-          dataMap[o.emp] = { name:o.empName||"", days:{} };
-        }
-        dataMap[o.emp].days[day] = (dataMap[o.emp].days[day]||0)+hours;
-      });
-
-      for (const emp in dataMap) {
-        const row = document.createElement("tr");
-        let total=0;
-        let cells="";
-        for (let d=1; d<=31; d++) {
-          const h = dataMap[emp].days[d]||"";
-          if (h) total+=h;
-          cells += `<td>${h}</td>`;
-        }
-        row.innerHTML = `<td>${emp}</td><td>${dataMap[emp].name}</td>${cells}<td>${total}</td>`;
-        tbody.appendChild(row);
+      // lọc theo khoảng ngày
+      if (start && end) {
+        if (date < start || date > end) return;
+      } else if (start) {
+        if (date !== start) return;
       }
 
-      document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
-      document.getElementById("myHour").innerText = totalHour;
+      let hours = 0;
+      if (o.start && o.end) {
+        const s = new Date("1970-01-01T"+o.start+":00");
+        let e = new Date("1970-01-01T"+o.end+":00");
+        if (e < s) e.setHours(e.getHours()+24);
+        hours = (e-s)/1000/3600;
+        totalHour += hours;
+      }
+
+      const day = parseInt(date.split("-")[2]);
+      if (!dataMap[o.emp]) {
+        dataMap[o.emp] = { name:o.empName||"", days:{} };
+      }
+      dataMap[o.emp].days[day] = (dataMap[o.emp].days[day]||0)+hours;
     });
-  }
+
+    for (const emp in dataMap) {
+      const row = document.createElement("tr");
+      let total=0;
+      let cells="";
+      for (let d=1; d<=31; d++) {
+        const h = dataMap[emp].days[d]||"";
+        if (h) total+=h;
+        cells += `<td>${h}</td>`;
+      }
+      row.innerHTML = `<td>${emp}</td><td>${dataMap[emp].name}</td>${cells}<td>${total}</td>`;
+      tbody.appendChild(row);
+    }
+
+    document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
+    document.getElementById("myHour").innerText = totalHour;
+  });
+}
+
 
   function resetTotal() {
     document.getElementById("totalStart").value="";
