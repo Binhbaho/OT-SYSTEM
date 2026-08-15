@@ -310,7 +310,7 @@ tr:hover{background:#f1f5f9}
 </div>
 
         <!-- TotalOvertime (nhân viên)-->
-        <div id="myTotal" class="page hidden">
+      <div id="myTotal" class="page">
   <h2>Tổng thời gian tăng ca</h2>
 
   <!-- Filter trên cùng một dòng -->
@@ -327,7 +327,7 @@ tr:hover{background:#f1f5f9}
     <button onclick="resetTotal()">Reset</button>
   </div>
 
-  <!-- Bảng chi tiết từ ngày 1 đến 31 -->
+  <!-- Bảng chi tiết -->
   <div class="table-wrap">
     <table id="totalTable">
       <thead>
@@ -335,11 +335,8 @@ tr:hover{background:#f1f5f9}
           <th>Mã NV</th>
           <th>Tên NV</th>
           <!-- tạo 31 cột ngày -->
-          <script>
-            for (let d=1; d<=31; d++) {
-              document.write("<th>"+d+"</th>");
-            }
-          </script>
+          <!-- bạn có thể viết tay hoặc dùng JS để sinh -->
+          <th>1</th><th>2</th><th>3</th> ... <th>31</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -347,6 +344,7 @@ tr:hover{background:#f1f5f9}
     </table>
   </div>
 </div>
+
 
 
       </div>
@@ -700,7 +698,7 @@ function calcTotal() {
     const dataMap = {};
     snapshot.forEach(doc => {
       const o = doc.data();
-      const date = o.date; // nhớ chuẩn hóa yyyy-mm-dd
+      const date = o.date; // cần chuẩn hóa yyyy-mm-dd
       if (start && end) {
         if (date < start || date > end) return;
       } else if (start) {
@@ -718,7 +716,7 @@ function calcTotal() {
 
       const day = parseInt(date.split("-")[2]);
       if (!dataMap[o.emp]) {
-        dataMap[o.emp] = { name:o.empName, days:{} };
+        dataMap[o.emp] = { name:o.empName||"", days:{} };
       }
       dataMap[o.emp].days[day] = (dataMap[o.emp].days[day]||0)+hours;
     });
@@ -740,6 +738,14 @@ function calcTotal() {
     document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
   });
 }
+
+function resetTotal() {
+  document.getElementById("totalStart").value="";
+  document.getElementById("totalEnd").value="";
+  document.getElementById("totalHour").innerText="Tổng giờ: 0";
+  document.getElementById("totalBody").innerHTML="";
+}
+
 
 function resetTotal() {
   document.getElementById("totalStart").value="";
