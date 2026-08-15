@@ -139,6 +139,20 @@ tr:hover{background:#f1f5f9}
         </div>
 
         <!-- Report -->
+        <div class="report-filter" style="display:flex; gap:10px; margin:15px 0;">
+  <label>Từ ngày:</label>
+  <input type="date" id="filterStart">
+  
+  <label>Đến ngày:</label>
+  <input type="date" id="filterEnd">
+  
+  <label>Mã NV:</label>
+  <input type="text" id="filterEmp" placeholder="Mã NV">
+  
+  <button onclick="filterReport()">Lọc</button>
+  <button onclick="resetReport()">Reset</button>
+</div>
+
         <div id="report" class="page hidden">
           <h2>Báo cáo</h2>
           <div class="cards">
