@@ -668,7 +668,7 @@ async function saveOT(){
     }
   });
 }
-  // ================== Báo cáo ==================
+// ================== Báo cáo ==================
 function filterReport() {
   const start = document.getElementById("filterStart").value;
   const end = document.getElementById("filterEnd").value;
@@ -711,7 +711,7 @@ function filterReport() {
     document.getElementById("rHour").innerText = totalHour;
     document.getElementById("rOtEmp").innerText = emp ? (empSet.size > 0 ? 1 : 0) : empSet.size;
 
-    // tổng nhân viên toàn hệ thống
+    // tổng nhân viên toàn hệ thống (không ảnh hưởng render bảng)
     db.collection("employees").get().then(empSnap => {
       document.getElementById("rEmp").innerText = empSnap.size;
     });
@@ -762,6 +762,7 @@ function resetReport() {
   const tbody = document.querySelector("#reportDetail tbody");
   tbody.innerHTML = "";
 }
+
 
 </script>
 </body>
