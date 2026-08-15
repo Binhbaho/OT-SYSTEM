@@ -481,6 +481,16 @@ db.collection("employees").onSnapshot(snapshot=>{
   }
 });
 
+function isToday(dateStr) {
+  const d = new Date(dateStr); // parse từ chuỗi yyyy-mm-dd
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
 // ================== QUẢN LÝ TĂNG CA ==================
 function loadOT() {
   let totalHour = 0;
@@ -553,15 +563,6 @@ function loadOT() {
   });
 }
 
-function isToday(dateStr) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
 
 
 // Hàm sửa: lấy dữ liệu từ Firestore và đưa lên form
