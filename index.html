@@ -120,9 +120,10 @@ tr:hover{background:#f1f5f9}
         <a href="#" onclick="showPage('report')">Báo cáo</a>
       </div>
       <div id="empMenu">
-        <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
-        <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
-      </div>
+  <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
+  <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
+  <a href="#" onclick="showPage('changePassword')">🔐 Đổi mật khẩu</a>
+</div>
       <a href="#" onclick="logout()">Đăng xuất</a>
     </div>
 
@@ -357,6 +358,40 @@ tr:hover{background:#f1f5f9}
 
   </div>
 </div>
+    <!-- Đổi mật khẩu nhân viên -->
+<div id="changePassword" class="page hidden">
+
+  <h2>🔐 Đổi mật khẩu</h2>
+
+  <div class="table-wrap" style="max-width:500px;">
+
+    <input
+      id="oldPassword"
+      type="password"
+      placeholder="Mật khẩu hiện tại"
+    >
+
+    <input
+      id="newPassword"
+      type="password"
+      placeholder="Mật khẩu mới"
+    >
+
+    <input
+      id="confirmPassword"
+      type="password"
+      placeholder="Nhập lại mật khẩu mới"
+    >
+
+    <br>
+
+    <button onclick="changePassword()">
+      Đổi mật khẩu
+    </button>
+
+  </div>
+
+</div>    
 
       </div>
     </div>
@@ -408,6 +443,50 @@ async function login(){
       alert("Sai tài khoản hoặc mật khẩu");
     }
   }
+}
+  .doc(doc.id)
+      .update({
+
+        password: newPassword
+
+      });
+
+
+    // ========================================================
+    // THÀNH CÔNG
+    // ========================================================
+
+    alert(
+      "✅ Đổi mật khẩu thành công!\n\n" +
+      "Bạn sẽ được đăng xuất.\n" +
+      "Vui lòng đăng nhập lại bằng mật khẩu mới."
+    );
+
+
+    // Xóa dữ liệu form
+    document.getElementById("oldPassword").value = "";
+    document.getElementById("newPassword").value = "";
+    document.getElementById("confirmPassword").value = "";
+
+
+    // Đăng xuất
+    logout();
+
+
+  } catch (error) {
+
+    console.error(
+      "Lỗi đổi mật khẩu:",
+      error
+    );
+
+    alert(
+      "❌ Không thể đổi mật khẩu.\n\n" +
+      error.message
+    );
+
+  }
+
 }
 
 // ================== Đăng xuất ==================
