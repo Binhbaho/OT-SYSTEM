@@ -117,6 +117,7 @@ tr:hover{background:#f1f5f9}
         <a href="#" onclick="showPage('home')">Trang chủ</a>
         <a href="#" onclick="showPage('employees')">Quản lý nhân viên</a>
         <a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
+        <a href="#" onclick="showPage('otCleanup')">🗑️ Dọn dữ liệu OT</a>
         <a href="#" onclick="showPage('report')">Báo cáo</a>
       </div>
       <div id="empMenu">
@@ -184,10 +185,12 @@ tr:hover{background:#f1f5f9}
           <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
   <input type="file" id="fileEmployees" accept=".csv" style="flex:1; margin:0;">
-  <button type="button" onclick="downloadEmployeeTemplate()">
-    📥 Tải mẫu nhân viên
-  </button>
+  <button type="button" onclick="downloadEmployeeTemplate()">📥 Tải mẫu nhân viên</button>
+  <button type="button" onclick="downloadEmployeeList()">📤 Tải danh sách hiện tại</button>
+  <button type="button" onclick="checkDuplicateEmployees()">🔍 Kiểm tra trùng</button>
+  <button type="button" onclick="replaceAllEmployees()">🔄 Thay thế toàn bộ</button>
 </div>
+<div style="font-size:13px;color:#64748b;margin-bottom:10px;">Mã NV là duy nhất. Import chỉ thêm nhân viên chưa có; Thay thế toàn bộ sẽ xóa danh sách nhân viên hiện tại rồi nạp file mới. Dữ liệu tăng ca không bị xóa.</div>
           <div class="table-wrap">
             <div class="row">
               <input id="eCode" placeholder="Mã NV">
@@ -202,6 +205,51 @@ tr:hover{background:#f1f5f9}
               <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
               <tbody id="employeeTable"></tbody>
             </table>
+          </div>
+
+        </div>
+
+        <!-- Dọn dữ liệu OT cũ (Admin) -->
+        <div id="otCleanup" class="page hidden">
+          <h2> Dọn dữ liệu tăng ca cũ</h2>
+
+          <div class="table-wrap" style="border:2px solid #f59e0b;">
+            <h3>⚠️ Quản lý dữ liệu OT cũ</h3>
+            <p style="font-size:14px;color:#64748b;line-height:1.6;">
+              Chức năng này <b>chỉ xóa dữ liệu trong bảng overtime</b>. Danh sách nhân viên,
+              tài khoản và các thông tin khác không bị ảnh hưởng. Dữ liệu đã xóa không thể
+              khôi phục từ giao diện này.
+            </p>
+
+            <div class="cards" style="display:flex;gap:12px;flex-wrap:wrap;margin:15px 0;">
+              <button type="button" onclick="setOTCleanupMonths(3)">Giữ 3 tháng gần nhất</button>
+              <button type="button" onclick="setOTCleanupMonths(6)">Giữ 6 tháng gần nhất</button>
+              <button type="button" onclick="setOTCleanupMonths(12)">Giữ 1 năm gần nhất</button>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <label for="otCleanupDate"><b>Xóa OT trước ngày:</b></label>
+              <input type="date" id="otCleanupDate" style="max-width:220px;">
+              <button type="button" onclick="previewDeleteOTBeforeDate()">🔎 Kiểm tra</button>
+            </div>
+
+            <div id="deleteOTPreview" style="margin-top:15px;font-size:15px;font-weight:600;"></div>
+
+            <div style="margin-top:18px;padding-top:15px;border-top:1px solid #e2e8f0;">
+              <button type="button" onclick="deleteOTBeforeDate()" style="background:#dc2626;color:white;">
+                🗑️ Xóa tăng ca cũ
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:18px;">
+            <h3>💡 Cách sử dụng</h3>
+            <ol style="line-height:1.8;">
+              <li>Chọn <b>Giữ 3 tháng</b>, <b>6 tháng</b> hoặc <b>1 năm</b>.</li>
+              <li>Hệ thống tự tính ngày mốc và kiểm tra số bản ghi OT sẽ bị xóa.</li>
+              <li>Nếu đúng, bấm <b>Xóa tăng ca cũ</b>.</li>
+              <li>Hệ thống yêu cầu nhập chính xác <b>XOA TANG CA</b> trước khi xóa.</li>
+            </ol>
           </div>
         </div>
 
@@ -361,7 +409,7 @@ tr:hover{background:#f1f5f9}
     <!-- Đổi mật khẩu nhân viên -->
 <div id="changePassword" class="page hidden">
 
-  <h2>🔐 Đổi mật khẩu</h2>
+  <h2> Đổi mật khẩu</h2>
 
   <div class="table-wrap" style="max-width:500px;">
 
@@ -554,81 +602,265 @@ function logout(){
   location.reload();
 }
 
-function showPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-}
+
 
 // ================== QUẢN LÝ NHÂN VIÊN ==================
 let editingEmployeeId = null;
 
 async function saveEmployee(){
+  if(!currentUser || currentUser.role !== "admin"){
+    alert("Bạn không có quyền thực hiện thao tác này.");
+    return;
+  }
+
   const emp = {
-    code: document.getElementById("eCode").value.trim(),
+    code: document.getElementById("eCode").value.trim().toUpperCase(),
     name: document.getElementById("eName").value.trim(),
     dept: document.getElementById("eDept").value.trim(),
     password: document.getElementById("ePass").value.trim()
   };
-  if(editingEmployeeId){
-    await db.collection("employees").doc(editingEmployeeId).update(emp);
-    editingEmployeeId = null;
-    alert("Đã cập nhật nhân viên");
-  }else{
-    await db.collection("employees").add(emp);
-    alert("Đã lưu nhân viên");
+
+  if(!emp.code || !emp.name || !emp.dept || !emp.password){
+    alert("Vui lòng nhập đầy đủ Mã NV, Họ tên, Bộ phận và Mật khẩu.");
+    return;
   }
+
+  try {
+    const existing = await db.collection("employees").get();
+    const conflict = existing.docs.some(doc =>
+      doc.id !== editingEmployeeId &&
+      String(doc.data().code || "").trim().toUpperCase() === emp.code
+    );
+    if(conflict){
+      alert("❌ Mã NV " + emp.code + " đã tồn tại. Mỗi nhân viên chỉ được có 1 mã NV.");
+      return;
+    }
+
+    if(editingEmployeeId){
+      await db.collection("employees").doc(editingEmployeeId).update(emp);
+      alert("✅ Đã cập nhật nhân viên.");
+    }else{
+      await db.collection("employees").add(emp);
+      alert("✅ Đã lưu nhân viên.");
+    }
+    clearEmployeeForm();
+  } catch(err){
+    console.error("Lỗi lưu nhân viên:", err);
+    alert("❌ Không thể lưu nhân viên.\n\n" + err.message);
+  }
+}
+
+function clearEmployeeForm(){
   document.getElementById("eCode").value="";
   document.getElementById("eName").value="";
   document.getElementById("eDept").value="";
   document.getElementById("ePass").value="";
+  editingEmployeeId = null;
 }
 
 function editEmployee(id){
   db.collection("employees").doc(id).get().then(doc=>{
     if(doc.exists){
       const e = doc.data();
-      document.getElementById("eCode").value = e.code;
-      document.getElementById("eName").value = e.name;
-      document.getElementById("eDept").value = e.dept;
-      document.getElementById("ePass").value = e.password;
+      document.getElementById("eCode").value = e.code || "";
+      document.getElementById("eName").value = e.name || "";
+      document.getElementById("eDept").value = e.dept || "";
+      document.getElementById("ePass").value = e.password || "";
       editingEmployeeId = id;
+      showPage("employees");
     }
+  }).catch(err=>{
+    console.error(err);
+    alert("❌ Không thể lấy thông tin nhân viên.\n\n" + err.message);
   });
 }
 
 async function deleteEmployee(id){
-  await db.collection("employees").doc(id).delete();
+  if(!currentUser || currentUser.role !== "admin"){
+    alert("Bạn không có quyền thực hiện thao tác này.");
+    return;
+  }
+  try {
+    const docSnap = await db.collection("employees").doc(id).get();
+    if(!docSnap.exists){ alert("Không tìm thấy nhân viên."); return; }
+    const e = docSnap.data();
+    const code = String(e.code || "").trim();
+    const name = String(e.name || "").trim();
+    const otSnap = await db.collection("overtime").where("emp", "==", code).get();
+    const otCount = otSnap.size;
+
+    const choice = prompt(
+      "XÓA NHÂN VIÊN\n\n" + code + " - " + name + "\n\n" +
+      "Số bản ghi tăng ca: " + otCount + "\n\n" +
+      "Nhập 1 = Chỉ xóa nhân viên, giữ lại OT\n" +
+      "Nhập 2 = Xóa nhân viên + toàn bộ OT\n" +
+      "Bấm Hủy = Không xóa"
+    );
+    if(choice === null) return;
+    if(choice !== "1" && choice !== "2"){ alert("Lựa chọn không hợp lệ."); return; }
+
+    if(choice === "2"){
+      const confirmText = prompt(
+        "⚠️ CẢNH BÁO\n\n" +
+        "Bạn sắp xóa nhân viên " + code + " và " + otCount + " bản ghi tăng ca.\n" +
+        "Dữ liệu đã xóa không thể khôi phục từ giao diện.\n\n" +
+        "Nhập chính xác: XOA " + code
+      );
+      if(confirmText !== "XOA " + code){ alert("Đã hủy xóa."); return; }
+    }else{
+      if(!confirm("Bạn chắc chắn muốn xóa nhân viên " + code + " - " + name + "?\n\nDữ liệu tăng ca sẽ được giữ lại.")) return;
+    }
+
+    await db.collection("employees").doc(id).delete();
+    if(choice === "2" && otCount > 0) await deleteDocsInBatches(otSnap.docs);
+    clearEmployeeForm();
+    alert(choice === "2" ? "✅ Đã xóa nhân viên và " + otCount + " bản ghi tăng ca." : "✅ Đã xóa nhân viên. Dữ liệu tăng ca được giữ lại.");
+  } catch(err){
+    console.error("Lỗi xóa nhân viên:", err);
+    alert("❌ Không thể xóa nhân viên.\n\n" + err.message);
+  }
 }
 
-db.collection("employees").onSnapshot(snapshot=>{
-  const tbody = document.getElementById("employeeTable");
-  if(tbody){
-    tbody.innerHTML="";
-    snapshot.forEach(doc=>{
-      const e=doc.data();
-      tbody.innerHTML+=`
-        <tr>
-          <td>${e.code}</td>
-          <td>${e.name}</td>
-          <td>${e.dept}</td>
-          <td>
-            <button onclick="editEmployee('${doc.id}')">Sửa</button>
-            <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
-          </td>
-        </tr>`;
-    });
+async function deleteDocsInBatches(docs){
+  for(let i=0; i<docs.length; i+=450){
+    const batch = db.batch();
+    docs.slice(i, i+450).forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
   }
-  document.getElementById("sEmp").innerText = snapshot.size;
-  document.getElementById("rEmp").innerText = snapshot.size;
-  const sel = document.getElementById("otEmp");
-  if(sel){
-    sel.innerHTML='<option value="" disabled selected>--Chọn nhân viên--</option>';
-    snapshot.forEach(doc=>{
+}
+
+function csvEscape(value){
+  const s = String(value ?? "");
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+async function downloadEmployeeList(){
+  try{
+    const snap = await db.collection("employees").get();
+    if(snap.empty){ alert("Danh sách nhân viên đang trống."); return; }
+    const rows = [["code","name","dept","password"]];
+    snap.forEach(doc=>{
       const e=doc.data();
-      sel.innerHTML+=`<option value="${e.code}" data-name="${e.name}">${e.code} - ${e.name}</option>`;
+      rows.push([e.code||"",e.name||"",e.dept||"",e.password||""]);
     });
+    const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+    downloadCSV("Danh_Sach_Nhan_Vien.csv", csv);
+    alert("✅ Đã tải " + snap.size + " nhân viên.\n\n⚠️ File có chứa mật khẩu, chỉ lưu và chia sẻ cho Admin.");
+  }catch(err){
+    console.error(err);
+    alert("❌ Không thể tải danh sách nhân viên.\n\n" + err.message);
   }
-});
+}
+
+async function checkDuplicateEmployees(){
+  try{
+    const snap = await db.collection("employees").get();
+    const map = new Map();
+    snap.forEach(doc=>{
+      const e=doc.data();
+      const code=String(e.code||"").trim().toUpperCase();
+      if(!code) return;
+      if(!map.has(code)) map.set(code,[]);
+      map.get(code).push({id:doc.id,name:e.name||""});
+    });
+    const duplicates=[...map.entries()].filter(([,list])=>list.length>1);
+    if(!duplicates.length){ alert("✅ Không phát hiện mã NV trùng.\n\nTổng: " + snap.size + " nhân viên."); return; }
+    let msg="⚠️ PHÁT HIỆN " + duplicates.length + " MÃ NV BỊ TRÙNG\n\n";
+    duplicates.forEach(([code,list])=>{
+      msg += code + "\n";
+      list.forEach((x,i)=>msg += "  " + (i+1) + ". " + x.name + "\n");
+      msg += "\n";
+    });
+    alert(msg);
+  }catch(err){
+    console.error(err);
+    alert("❌ Không thể kiểm tra trùng.\n\n" + err.message);
+  }
+}
+
+async function replaceAllEmployees(){
+  if(!currentUser || currentUser.role !== "admin"){ alert("Bạn không có quyền thực hiện thao tác này."); return; }
+  const fileInput=document.getElementById("fileEmployees");
+  const file=fileInput.files[0];
+  if(!file){ alert("Vui lòng chọn file CSV danh sách nhân viên trước."); return; }
+  try{
+    const text=await file.text();
+    const lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).filter(line=>line.trim()!=="");
+    if(lines.length<2){ alert("❌ File không có dữ liệu."); return; }
+    const header=parseCSVLine(lines[0]).map(x=>x.toLowerCase());
+    const requiredHeader=["code","name","dept","password"];
+    if(!requiredHeader.every((item,index)=>header[index]===item)){ alert("❌ Sai định dạng file. Header phải là:\ncode,name,dept,password"); return; }
+    const newEmployees=[],seen=new Set(),errors=[];
+    for(let i=1;i<lines.length;i++){
+      const row=parseCSVLine(lines[i]);
+      if(row.length<4){ errors.push("Dòng " + (i+1) + ": thiếu dữ liệu"); continue; }
+      const code=row[0].trim().toUpperCase(),name=row[1].trim(),dept=row[2].trim(),password=row[3].trim();
+      const key=code.toUpperCase();
+      if(!code||!name||!dept||!password){ errors.push("Dòng " + (i+1) + ": thiếu thông tin"); continue; }
+      if(seen.has(key)){ errors.push("Dòng " + (i+1) + ": mã NV " + code + " bị trùng trong file"); continue; }
+      seen.add(key); newEmployees.push({code,name,dept,password});
+    }
+    if(errors.length){ alert("❌ Không thể thay thế danh sách.\n\n" + errors.join("\n")); return; }
+    const currentSnap=await db.collection("employees").get();
+    const confirmText=prompt("⚠️ THAY THẾ TOÀN BỘ DANH SÁCH\n\nHiện tại: " + currentSnap.size + " nhân viên\nFile mới: " + newEmployees.length + " nhân viên\n\nDữ liệu tăng ca KHÔNG bị xóa.\nNhập chính xác: THAY THE NHAN VIEN");
+    if(confirmText!=="THAY THE NHAN VIEN"){ alert("Đã hủy."); return; }
+    if(currentSnap.size) await deleteDocsInBatches(currentSnap.docs);
+    for(let i=0;i<newEmployees.length;i+=450){
+      const batch=db.batch();
+      newEmployees.slice(i,i+450).forEach(emp=>{ const ref=db.collection("employees").doc(); batch.set(ref,emp); });
+      await batch.commit();
+    }
+    fileInput.value="";
+    alert("✅ Đã thay thế toàn bộ danh sách.\n\nĐã import: " + newEmployees.length + " nhân viên.\nDữ liệu tăng ca được giữ nguyên.");
+  }catch(err){
+    console.error("Lỗi thay thế danh sách:",err);
+    alert("❌ Không thể thay thế danh sách.\n\n" + err.message);
+  }
+}
+
+function setOTCleanupMonths(months){
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById("otCleanupDate").value = `${yyyy}-${mm}-${dd}`;
+  previewDeleteOTBeforeDate();
+}
+
+async function deleteOTBeforeDate(){
+  const date=document.getElementById("otCleanupDate").value;
+  if(!date){ alert("Vui lòng chọn ngày."); return; }
+  try{
+    const snap=await db.collection("overtime").where("date","<",date).get();
+    if(snap.empty){ alert("Không có dữ liệu tăng ca trước " + date + "."); return; }
+    const confirmText=prompt("⚠️ XÓA TĂNG CA CŨ\n\nSẽ xóa " + snap.size + " bản ghi có ngày trước " + date + ".\n\nNhập chính xác: XOA TANG CA");
+    if(confirmText!=="XOA TANG CA"){ alert("Đã hủy."); return; }
+    await deleteDocsInBatches(snap.docs);
+    alert("✅ Đã xóa " + snap.size + " bản ghi tăng ca trước " + date + ".");
+  }catch(err){
+    console.error("Lỗi xóa OT cũ:",err);
+    alert("❌ Không thể xóa tăng ca cũ.\n\n" + err.message);
+  }
+}
+
+async function previewDeleteOTBeforeDate(){
+  const date=document.getElementById("otCleanupDate").value;
+  if(!date){ alert("Vui lòng chọn ngày."); return; }
+  try{
+    const snap=await db.collection("overtime").where("date","<",date).get();
+    const box = document.getElementById("deleteOTPreview");
+    if(box){
+      box.innerHTML = snap.size > 0
+        ? "⚠️ Có <b>" + snap.size + "</b> bản ghi sẽ bị xóa nếu chọn mốc <b>" + date + "</b>."
+        : "✅ Không có bản ghi tăng ca nào trước ngày <b>" + date + "</b>.";
+    }
+  }catch(err){
+    alert("❌ Không thể kiểm tra.\n\n" + err.message);
+  }
+}
+
+
 
 function isToday(dateStr) {
   const d = new Date(dateStr); // parse từ chuỗi yyyy-mm-dd
@@ -1296,235 +1528,34 @@ function parseCSVLine(line) {
 document
   .getElementById("fileEmployees")
   .addEventListener("change", async function(event) {
-
-    const file = event.target.files[0];
-
-    if (!file) return;
-
-
-    try {
-
-      const text = await file.text();
-
-      // Xóa BOM nếu có
-      const cleanText =
-        text.replace(/^\uFEFF/, "");
-
-      const lines =
-        cleanText
-          .split(/\r?\n/)
-          .filter(line => line.trim() !== "");
-
-
-      if (lines.length < 2) {
-
-        alert(
-          "❌ File không có dữ liệu."
-        );
-
-        return;
+    const file=event.target.files[0];
+    if(!file) return;
+    try{
+      const lines=(await file.text()).replace(/^\uFEFF/,"").split(/\r?\n/).filter(line=>line.trim()!=="");
+      if(lines.length<2){ alert("❌ File không có dữ liệu."); return; }
+      const header=parseCSVLine(lines[0]).map(x=>x.toLowerCase());
+      const requiredHeader=["code","name","dept","password"];
+      if(!requiredHeader.every((item,index)=>header[index]===item)){ alert("❌ Sai định dạng file nhân viên.\n\nHeader phải là:\ncode,name,dept,password"); return; }
+      let success=0,duplicate=0,error=0; const errorList=[]; const seenInFile=new Set();
+      for(let i=1;i<lines.length;i++){
+        const row=parseCSVLine(lines[i]);
+        if(row.length<4){ error++; errorList.push("Dòng " + (i+1) + ": thiếu dữ liệu"); continue; }
+        const code=row[0].trim().toUpperCase(),name=row[1].trim(),dept=row[2].trim(),password=row[3].trim();
+        const key=code.toUpperCase();
+        if(!code||!name||!dept||!password){ error++; errorList.push("Dòng " + (i+1) + ": thiếu thông tin"); continue; }
+        if(seenInFile.has(key)){ duplicate++; errorList.push("Dòng " + (i+1) + ": mã NV " + code + " bị trùng trong file"); continue; }
+        seenInFile.add(key);
+        const allEmployees=await db.collection("employees").get();
+        const existing=allEmployees.docs.some(doc => String(doc.data().code || "").trim().toUpperCase() === code);
+        if(existing){ duplicate++; errorList.push("Dòng " + (i+1) + ": mã NV " + code + " đã tồn tại trên hệ thống"); continue; }
+        await db.collection("employees").add({code,name,dept,password}); success++;
       }
-
-
-      // ==========================================
-      // KIỂM TRA HEADER
-      // ==========================================
-
-      const header =
-        parseCSVLine(lines[0])
-          .map(x => x.toLowerCase());
-
-
-      const requiredHeader = [
-        "code",
-        "name",
-        "dept",
-        "password"
-      ];
-
-
-      const headerOK =
-        requiredHeader.every(
-          (item, index) =>
-            header[index] === item
-        );
-
-
-      if (!headerOK) {
-
-        alert(
-          "❌ Sai định dạng file nhân viên.\n\n" +
-          "Header phải là:\n" +
-          "code,name,dept,password\n\n" +
-          "Hãy bấm 'Tải mẫu nhân viên' để lấy file đúng định dạng."
-        );
-
-        return;
-      }
-
-
-      // ==========================================
-      // THỐNG KÊ
-      // ==========================================
-
-      let success = 0;
-
-      let duplicate = 0;
-
-      let error = 0;
-
-      const errorList = [];
-
-
-      // ==========================================
-      // ĐỌC TỪNG DÒNG
-      // ==========================================
-
-      for (
-        let i = 1;
-        i < lines.length;
-        i++
-      ) {
-
-        const row =
-          parseCSVLine(lines[i]);
-
-
-        if (row.length < 4) {
-
-          error++;
-
-          errorList.push(
-            `Dòng ${i + 1}: thiếu dữ liệu`
-          );
-
-          continue;
-        }
-
-
-        const code =
-          row[0].trim();
-
-        const name =
-          row[1].trim();
-
-        const dept =
-          row[2].trim();
-
-        const password =
-          row[3].trim();
-
-
-        // ========================================
-        // KIỂM TRA DỮ LIỆU
-        // ========================================
-
-        if (
-          !code ||
-          !name ||
-          !dept ||
-          !password
-        ) {
-
-          error++;
-
-          errorList.push(
-            `Dòng ${i + 1}: thiếu thông tin`
-          );
-
-          continue;
-        }
-
-
-        // ========================================
-        // KIỂM TRA MÃ NV ĐÃ TỒN TẠI
-        // ========================================
-
-        const existing =
-          await db
-            .collection("employees")
-            .where("code", "==", code)
-            .limit(1)
-            .get();
-
-
-        if (!existing.empty) {
-
-          duplicate++;
-
-          continue;
-        }
-
-
-        // ========================================
-        // LƯU FIREBASE
-        // ========================================
-
-        await db
-          .collection("employees")
-          .add({
-            code: code,
-            name: name,
-            dept: dept,
-            password: password
-          });
-
-
-        success++;
-      }
-
-
-      // ==========================================
-      // THÔNG BÁO KẾT QUẢ
-      // ==========================================
-
-      let message =
-        "📥 KẾT QUẢ IMPORT NHÂN VIÊN\n\n" +
-
-        "✅ Thành công: " +
-        success +
-        "\n" +
-
-        "⚠️ Trùng mã NV: " +
-        duplicate +
-        "\n" +
-
-        "❌ Lỗi: " +
-        error;
-
-
-      if (errorList.length > 0) {
-
-        message +=
-          "\n\nChi tiết lỗi:\n" +
-          errorList.join("\n");
-
-      }
-
-
+      let message="📥 KẾT QUẢ IMPORT NHÂN VIÊN\n\n✅ Thành công: " + success + "\n⚠️ Trùng mã NV: " + duplicate + "\n❌ Lỗi: " + error;
+      if(errorList.length) message += "\n\nChi tiết:\n" + errorList.join("\n");
       alert(message);
-
-
-    } catch (err) {
-
-      console.error(
-        "Lỗi import nhân viên:",
-        err
-      );
-
-      alert(
-        "❌ Không thể import file nhân viên.\n\n" +
-        err.message
-      );
-
-    }
-
-
-    // Cho phép chọn lại cùng một file
-    event.target.value = "";
-
+    }catch(err){ console.error("Lỗi import nhân viên:",err); alert("❌ Không thể import file nhân viên.\n\n" + err.message); }
+    event.target.value="";
   });
-
 
 // ============================================================
 // IMPORT ĐĂNG KÝ TĂNG CA
@@ -1686,7 +1717,6 @@ document
           continue;
         }
 
-
         // ========================================
         // KIỂM TRA NHÂN VIÊN CÓ TỒN TẠI
         // ========================================
@@ -1710,7 +1740,6 @@ document
           continue;
         }
 
-
         // ========================================
         // LẤY TÊN NV TỪ DATABASE
         // Không phụ thuộc tên trong file
@@ -1721,7 +1750,6 @@ document
 
         const realEmpName =
           employeeData.name || empName;
-
 
         // ========================================
         // KIỂM TRA CA
@@ -1742,10 +1770,8 @@ document
           continue;
         }
 
-
         const realShift =
           shiftMatch[0];
-
 
         // ========================================
         // KIỂM TRA NGÀY
@@ -1764,7 +1790,6 @@ document
 
           continue;
         }
-
 
         // ========================================
         // KIỂM TRA GIỜ
@@ -1815,12 +1840,9 @@ document
 
           continue;
         }
-
-
-        // ========================================
+        
         // LƯU FIREBASE
-        // ========================================
-
+       
         await db
           .collection("overtime")
           .add({
@@ -2009,11 +2031,12 @@ async function saveOT() {
         .where("shift", "==", shift)
         .where("start", "==", start)
         .where("end", "==", end)
-        .limit(1)
+        .limit(10)
         .get();
 
+    const realDuplicate = duplicateSnap.docs.some(doc => doc.id !== window.currentEditId);
 
-    if (!duplicateSnap.empty) {
+    if (realDuplicate) {
 
       alert(
         "⚠️ Đăng ký tăng ca này đã tồn tại!"
@@ -2024,33 +2047,27 @@ async function saveOT() {
 
 
     // ========================================
-    // LƯU
+    // LƯU / CẬP NHẬT
     // ========================================
 
-    await db
-      .collection("overtime")
-      .add({
+    const otData = {
+      emp: empCode,
+      empName: empName,
+      date: date,
+      start: start,
+      end: end,
+      shift: shift,
+      work: work
+    };
 
-        emp: empCode,
-
-        empName: empName,
-
-        date: date,
-
-        start: start,
-
-        end: end,
-
-        shift: shift,
-
-        work: work
-
-      });
-
-
-    alert(
-      "✅ Đã lưu lịch tăng ca"
-    );
+    if(window.currentEditId){
+      await db.collection("overtime").doc(window.currentEditId).update(otData);
+      window.currentEditId = null;
+      alert("✅ Đã cập nhật lịch tăng ca");
+    }else{
+      await db.collection("overtime").add(otData);
+      alert("✅ Đã lưu lịch tăng ca");
+    }
 
 
     // ========================================
@@ -2068,7 +2085,7 @@ async function saveOT() {
     document.getElementById("otShift").value = "1";
 
     document.getElementById("otWork").value = "";
-
+    window.currentEditId = null;
 
   } catch (err) {
 
