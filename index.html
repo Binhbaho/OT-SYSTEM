@@ -432,7 +432,7 @@ async function login(){
     const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
     if(!snap.empty){
       const emp = snap.docs[0].data();
-      currentUser = {role:"emp",code:emp.code,name:emp.name};
+     currentUser = {role: "emp",id: snap.docs[0].id,code: emp.code,name: emp.name};
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
       document.getElementById("welcome").innerText="Xin chào "+emp.name;
@@ -449,182 +449,104 @@ async function login(){
 
 async function changePassword() {
 
-  // Kiểm tra đã đăng nhập chưa
-  if (!currentUser || currentUser.role !== "emp") {
+    if (!currentUser || currentUser.role !== "emp") {
+        alert("Bạn chưa đăng nhập tài khoản nhân viên.");
+        return;
+    }
 
-    alert("Bạn chưa đăng nhập tài khoản nhân viên.");
+    const oldPassword =
+        document.getElementById("oldPassword").value.trim();
 
-    return;
-  }
+    const newPassword =
+        document.getElementById("newPassword").value.trim();
 
-
-  // Lấy dữ liệu
-  const oldPassword =
-    document.getElementById("oldPassword").value.trim();
-
-  const newPassword =
-    document.getElementById("newPassword").value.trim();
-
-  const confirmPassword =
-    document.getElementById("confirmPassword").value.trim();
+    const confirmPassword =
+        document.getElementById("confirmPassword").value.trim();
 
 
-  // ==========================================================
-  // KIỂM TRA MẬT KHẨU HIỆN TẠI
-  // ==========================================================
-
-  if (!oldPassword) {
-
-    alert("Vui lòng nhập mật khẩu hiện tại.");
-
-    return;
-  }
-
-
-  // ==========================================================
-  // KIỂM TRA MẬT KHẨU MỚI
-  // ==========================================================
-
-  if (!newPassword) {
-
-    alert("Vui lòng nhập mật khẩu mới.");
-
-    return;
-  }
-
-
-  if (newPassword.length < 4) {
-
-    alert("Mật khẩu mới phải có ít nhất 4 ký tự.");
-
-    return;
-  }
-
-
-  // ==========================================================
-  // KHÔNG CHO ĐẶT LẠI MẬT KHẨU CŨ
-  // ==========================================================
-
-  if (newPassword === oldPassword) {
-
-    alert(
-      "Mật khẩu mới phải khác mật khẩu hiện tại."
-    );
-
-    return;
-  }
-
-
-  // ==========================================================
-  // KIỂM TRA NHẬP LẠI
-  // ==========================================================
-
-  if (newPassword !== confirmPassword) {
-
-    alert(
-      "Mật khẩu mới và mật khẩu nhập lại không giống nhau."
-    );
-
-    return;
-  }
-
-
-  try {
-
-    // ========================================================
-    // TÌM NHÂN VIÊN HIỆN TẠI
-    // ========================================================
-
-    const snap =
-      await db
-        .collection("employees")
-        .where(
-          "code",
-          "==",
-          currentUser.code
-        )
-        .limit(1)
-        .get();
-
-
-    if (snap.empty) {
-
-      alert(
-        "Không tìm thấy thông tin nhân viên."
-      );
-
-      return;
+    // Kiểm tra nhập đủ
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        alert("Vui lòng nhập đầy đủ thông tin.");
+        return;
     }
 
 
-    const doc = snap.docs[0];
-
-    const emp = doc.data();
-
-
-    // ========================================================
-    // KIỂM TRA MẬT KHẨU CŨ
-    // ========================================================
-
-    if (String(emp.password) !== oldPassword) {
-
-      alert(
-        "❌ Mật khẩu hiện tại không đúng."
-      );
-
-      return;
+    // Kiểm tra mật khẩu mới
+    if (newPassword.length < 4) {
+        alert("Mật khẩu mới phải có ít nhất 4 ký tự.");
+        return;
     }
 
 
-    // ========================================================
-    // CẬP NHẬT MẬT KHẨU
-    // ========================================================
-
-    await db
-      .collection("employees")
-      .doc(doc.id)
-      .update({
-
-        password: newPassword
-
-      });
+    if (newPassword !== confirmPassword) {
+        alert("Mật khẩu mới và nhập lại mật khẩu không giống nhau.");
+        return;
+    }
 
 
-    // ========================================================
-    // THÀNH CÔNG
-    // ========================================================
-
-    alert(
-      "✅ Đổi mật khẩu thành công!\n\n" +
-      "Bạn sẽ được đăng xuất.\n" +
-      "Vui lòng đăng nhập lại bằng mật khẩu mới."
-    );
+    if (newPassword === oldPassword) {
+        alert("Mật khẩu mới phải khác mật khẩu hiện tại.");
+        return;
+    }
 
 
-    // Xóa dữ liệu form
-    document.getElementById("oldPassword").value = "";
-    document.getElementById("newPassword").value = "";
-    document.getElementById("confirmPassword").value = "";
+    try {
+
+        // Lấy đúng document của nhân viên đang đăng nhập
+        const docRef = db
+            .collection("employees")
+            .doc(currentUser.id);
+
+        const docSnap = await docRef.get();
 
 
-    // Đăng xuất
-    logout();
+        if (!docSnap.exists) {
+            alert("Không tìm thấy tài khoản nhân viên.");
+            return;
+        }
 
 
-  } catch (error) {
+        const emp = docSnap.data();
 
-    console.error(
-      "Lỗi đổi mật khẩu:",
-      error
-    );
 
-    alert(
-      "❌ Không thể đổi mật khẩu.\n\n" +
-      error.message
-    );
+        // Kiểm tra mật khẩu hiện tại
+        if (String(emp.password).trim() !== oldPassword) {
 
-  }
+            alert("❌ Mật khẩu hiện tại không đúng.");
+            return;
+        }
 
+
+        // Cập nhật mật khẩu mới
+        await docRef.update({
+            password: newPassword
+        });
+
+
+        alert(
+            "✅ Đổi mật khẩu thành công!\n\n" +
+            "Bạn sẽ được đăng xuất và cần đăng nhập lại."
+        );
+
+
+        // Xóa form
+        document.getElementById("oldPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmPassword").value = "";
+
+
+        // Đăng xuất
+        logout();
+
+    } catch (error) {
+
+        console.error("Lỗi đổi mật khẩu:", error);
+
+        alert(
+            "❌ Không thể đổi mật khẩu.\n\n" +
+            error.message
+        );
+    }
 }
 
 // ================== Đăng xuất ==================
