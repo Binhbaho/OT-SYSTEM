@@ -57,6 +57,34 @@ th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}
 tr:hover{background:#f1f5f9}
 .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 
+/* Bảng danh sách nhân viên: cuộn riêng, giữ khu vực nhập liệu ở phía trên */
+.employee-list-wrap{
+  background:#fff;
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,.08);
+  margin-top:15px;
+  max-height:430px;
+  overflow-y:auto;
+  overflow-x:auto;
+}
+.employee-list-wrap table{
+  width:100%;
+  min-width:650px;
+  border-collapse:collapse;
+}
+.employee-list-wrap thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#f0f0f0;
+  box-shadow:0 1px 0 #cbd5e1;
+}
+.employee-list-wrap td:last-child,
+.employee-list-wrap th:last-child{
+  white-space:nowrap;
+}
+
 /* Bảng báo cáo chi tiết */
 .list-wrap {overflow-x:auto;}       /* bật scroll ngang */
 #reportDetail {min-width:900px;}    /* đảm bảo đủ rộng cho 31 cột */
@@ -94,6 +122,34 @@ tr:hover{background:#f1f5f9}
     font-size: 16px;
   }
 
+}
+
+/* ===== Cuộn bảng an toàn cho Admin + Nhân viên ===== */
+#overtime .table-scroll-safe, #myovertime .table-scroll-safe{
+  width:100%;
+  max-height:430px;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+}
+#overtime .table-scroll-safe table, #myovertime .table-scroll-safe table{
+  width:100%;
+  min-width:760px;
+  border-collapse:collapse;
+}
+#overtime .table-scroll-safe th, #overtime .table-scroll-safe td,
+#myovertime .table-scroll-safe th, #myovertime .table-scroll-safe td{
+  white-space:nowrap;
+}
+#overtime .table-scroll-safe thead th, #myovertime .table-scroll-safe thead th{
+  position:sticky; top:0; z-index:2; background:#f0f0f0;
+}
+@media(max-width:768px){
+  #overtime .table-scroll-safe, #myovertime .table-scroll-safe{max-height:360px;}
+  #overtime .table-scroll-safe table, #myovertime .table-scroll-safe table{min-width:760px;}
+  #myovertime .report-filter{flex-direction:column;align-items:stretch!important;}
+  #myovertime .report-filter button{width:100%;padding:12px;}
 }
 </style>
 </head>
@@ -200,7 +256,8 @@ tr:hover{background:#f1f5f9}
             </div><br>
             <button onclick="saveEmployee()">Lưu</button>
           </div>
-          <div class="list-wrap">
+          <div style="font-size:13px;color:#64748b;margin-top:12px;">↕️ Cuộn bảng để xem các nhân viên bên dưới. Khi bấm <b>Sửa</b>, thông tin sẽ hiển thị ở các ô phía trên.</div>
+          <div class="employee-list-wrap">
             <table>
               <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
               <tbody id="employeeTable"></tbody>
@@ -211,7 +268,7 @@ tr:hover{background:#f1f5f9}
 
         <!-- Dọn dữ liệu OT cũ (Admin) -->
         <div id="otCleanup" class="page hidden">
-          <h2> Dọn dữ liệu tăng ca cũ</h2>
+          <h2>🗑️ Dọn dữ liệu tăng ca cũ</h2>
 
           <div class="table-wrap" style="border:2px solid #f59e0b;">
             <h3>⚠️ Quản lý dữ liệu OT cũ</h3>
@@ -281,10 +338,12 @@ tr:hover{background:#f1f5f9}
               <button onclick="resetSearch()">Reset</button>
               </div>
 
-            <table>
-              <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
-              <tbody id="otTable"></tbody>
-            </table>            
+            <div class="table-scroll-safe">
+              <table>
+                <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
+                <tbody id="otTable"></tbody>
+              </table>
+            </div>            
 
           </div>
         </div>
@@ -357,14 +416,16 @@ tr:hover{background:#f1f5f9}
   <input id="search" placeholder="Tìm theo ngày hoặc công việc" onkeyup="renderMyOT()">
 
   <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th>
-        </tr>
-      </thead>
-      <tbody id="myTable"></tbody>
-    </table>
+    <div class="table-scroll-safe">
+      <table>
+        <thead>
+          <tr>
+            <th>Ngày</th><th>Ca</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th>
+          </tr>
+        </thead>
+        <tbody id="myTable"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -409,7 +470,7 @@ tr:hover{background:#f1f5f9}
     <!-- Đổi mật khẩu nhân viên -->
 <div id="changePassword" class="page hidden">
 
-  <h2> Đổi mật khẩu</h2>
+  <h2>🔐 Đổi mật khẩu</h2>
 
   <div class="table-wrap" style="max-width:500px;">
 
@@ -1717,6 +1778,7 @@ document
           continue;
         }
 
+
         // ========================================
         // KIỂM TRA NHÂN VIÊN CÓ TỒN TẠI
         // ========================================
@@ -1740,6 +1802,7 @@ document
           continue;
         }
 
+
         // ========================================
         // LẤY TÊN NV TỪ DATABASE
         // Không phụ thuộc tên trong file
@@ -1750,6 +1813,7 @@ document
 
         const realEmpName =
           employeeData.name || empName;
+
 
         // ========================================
         // KIỂM TRA CA
@@ -1770,8 +1834,10 @@ document
           continue;
         }
 
+
         const realShift =
           shiftMatch[0];
+
 
         // ========================================
         // KIỂM TRA NGÀY
@@ -1790,6 +1856,7 @@ document
 
           continue;
         }
+
 
         // ========================================
         // KIỂM TRA GIỜ
@@ -1840,9 +1907,12 @@ document
 
           continue;
         }
-        
+
+
+        // ========================================
         // LƯU FIREBASE
-       
+        // ========================================
+
         await db
           .collection("overtime")
           .add({
