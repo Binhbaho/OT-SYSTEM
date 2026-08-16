@@ -181,7 +181,12 @@ tr:hover{background:#f1f5f9}
         <!-- Employees -->
         <div id="employees" class="page hidden">
           <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
-          <input type="file" id="fileEmployees" />
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+  <input type="file" id="fileEmployees" accept=".csv" style="flex:1; margin:0;">
+  <button type="button" onclick="downloadEmployeeTemplate()">
+    📥 Tải mẫu nhân viên
+  </button>
+</div>
           <div class="table-wrap">
             <div class="row">
               <input id="eCode" placeholder="Mã NV">
@@ -202,7 +207,12 @@ tr:hover{background:#f1f5f9}
         <!-- Overtime (Admin) -->
         <div id="overtime" class="page hidden">
           <h2>Quản lý tăng ca</h2>
-          <input type="file" id="fileOT" />
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+  <input type="file" id="fileOT" accept=".csv" style="flex:1; margin:0;">
+  <button type="button" onclick="downloadOTTemplate()">
+    📥 Tải mẫu tăng ca
+  </button>
+</div>
           <div class="table-wrap">
             <div class="row">
               <select id="otEmp"><option value="" disabled selected>--Chọn nhân viên--</option></select>
@@ -995,52 +1005,965 @@ function resetMyOT() {
   }
 
 // ================== Import tăng ca từ file CSV ==================
-document.getElementById("fileOT").addEventListener("change",async(event)=>{
-  const file=event.target.files[0];
-  if(!file)return;
-  const text=await file.text();
-  const rows=text.split("\n").slice(1);
-  for(const row of rows){
-    if(!row.trim())continue;
-    const [emp,empName,shift,date,start,end,work]=row.split(",").map(x=>x.trim());
-    if(emp&&date){
-      await db.collection("overtime").add({emp,empName,shift,date,start,end,work});
+Code
+Huybinh Tran<tranhuybinh151@gmail.com>
+​Bạn​
+// ============================================================
+// IMPORT / EXPORT FILE CSV
+// ============================================================
+
+
+// ============================================================
+// TẠO FILE CSV VÀ DOWNLOAD
+// ============================================================
+
+function downloadCSV(filename, content) {
+
+  // BOM UTF-8 để Excel đọc đúng tiếng Việt
+  const BOM = "\uFEFF";
+
+  const blob = new Blob(
+    [BOM + content],
+    {
+      type: "text/csv;charset=utf-8;"
     }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = filename;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+
+
+// ============================================================
+// TẢI MẪU DANH SÁCH NHÂN VIÊN
+// ============================================================
+
+function downloadEmployeeTemplate() {
+
+  const csv =
+`code,name,dept,password
+P44148,Nguyễn Thị Minh Hà,Gia công,1234
+U51083,Đỗ Thị Thanh Sang,Shiage,1234
+NV001,Nguyễn Văn A,Sản xuất,1234`;
+
+  downloadCSV(
+    "Mau_Danh_Sach_Nhan_Vien.csv",
+    csv
+  );
+}
+
+
+// ============================================================
+// TẢI MẪU ĐĂNG KÝ TĂNG CA
+// ============================================================
+
+function downloadOTTemplate() {
+
+  const csv =
+`emp,empName,shift,date,start,end,work
+P44148,Nguyễn Thị Minh Hà,1,2026-08-16,18:00,22:00,Chạy máy
+U51083,Đỗ Thị Thanh Sang,2,2026-08-16,18:00,22:00,Kiểm tra sản phẩm
+NV001,Nguyễn Văn A,3,2026-08-16,18:00,22:00,Công việc sản xuất`;
+
+  downloadCSV(
+    "Mau_Dang_Ky_Tang_Ca.csv",
+    csv
+  );
+}
+
+
+// ============================================================
+// ĐỌC CSV
+// Hỗ trợ dấu phẩy trong nội dung nếu được đặt trong ""
+// ============================================================
+
+function parseCSVLine(line) {
+
+  const result = [];
+
+  let current = "";
+
+  let insideQuotes = false;
+
+
+  for (let i = 0; i < line.length; i++) {
+
+    const char = line[i];
+
+    // Gặp dấu "
+    if (char === '"') {
+
+      // Nếu đang trong chuỗi và gặp ""
+      if (
+        insideQuotes &&
+        line[i + 1] === '"'
+      ) {
+
+        current += '"';
+
+        i++;
+
+      } else {
+
+        insideQuotes = !insideQuotes;
+
+      }
+
+    }
+
+    // Gặp dấu phẩy bên ngoài ""
+    else if (
+      char === "," &&
+      !insideQuotes
+    ) {
+
+      result.push(
+        current.trim()
+      );
+
+      current = "";
+
+    }
+
+    else {
+
+      current += char;
+
+    }
+
   }
-  alert("Đã import lịch tăng ca từ file!");
-});
-  
-async function saveOT(){
-  const empCode = document.getElementById("otEmp").value;
-  if(!empCode){
-    alert("Vui lòng chọn nhân viên");
+
+  result.push(
+    current.trim()
+  );
+
+  return result;
+}
+
+
+// ============================================================
+// IMPORT DANH SÁCH NHÂN VIÊN
+// ============================================================
+
+document
+  .getElementById("fileEmployees")
+  .addEventListener("change", async function(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+
+    try {
+
+      const text = await file.text();
+
+      // Xóa BOM nếu có
+      const cleanText =
+        text.replace(/^\uFEFF/, "");
+
+      const lines =
+        cleanText
+          .split(/\r?\n/)
+          .filter(line => line.trim() !== "");
+
+
+      if (lines.length < 2) {
+
+        alert(
+          "❌ File không có dữ liệu."
+        );
+
+        return;
+      }
+
+
+      // ==========================================
+      // KIỂM TRA HEADER
+      // ==========================================
+
+      const header =
+        parseCSVLine(lines[0])
+          .map(x => x.toLowerCase());
+
+
+      const requiredHeader = [
+        "code",
+        "name",
+        "dept",
+        "password"
+      ];
+
+
+      const headerOK =
+        requiredHeader.every(
+          (item, index) =>
+            header[index] === item
+        );
+
+
+      if (!headerOK) {
+
+        alert(
+          "❌ Sai định dạng file nhân viên.\n\n" +
+          "Header phải là:\n" +
+          "code,name,dept,password\n\n" +
+          "Hãy bấm 'Tải mẫu nhân viên' để lấy file đúng định dạng."
+        );
+
+        return;
+      }
+
+
+      // ==========================================
+      // THỐNG KÊ
+      // ==========================================
+
+      let success = 0;
+
+      let duplicate = 0;
+
+      let error = 0;
+
+      const errorList = [];
+
+
+      // ==========================================
+      // ĐỌC TỪNG DÒNG
+      // ==========================================
+
+      for (
+        let i = 1;
+        i < lines.length;
+        i++
+      ) {
+
+        const row =
+          parseCSVLine(lines[i]);
+
+
+        if (row.length < 4) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: thiếu dữ liệu`
+          );
+
+          continue;
+        }
+
+
+        const code =
+          row[0].trim();
+
+        const name =
+          row[1].trim();
+
+        const dept =
+          row[2].trim();
+
+        const password =
+          row[3].trim();
+
+
+        // ========================================
+        // KIỂM TRA DỮ LIỆU
+        // ========================================
+
+        if (
+          !code ||
+          !name ||
+          !dept ||
+          !password
+        ) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: thiếu thông tin`
+          );
+
+          continue;
+        }
+
+
+        // ========================================
+        // KIỂM TRA MÃ NV ĐÃ TỒN TẠI
+        // ========================================
+
+        const existing =
+          await db
+            .collection("employees")
+            .where("code", "==", code)
+            .limit(1)
+            .get();
+
+
+        if (!existing.empty) {
+
+          duplicate++;
+
+          continue;
+        }
+
+
+        // ========================================
+        // LƯU FIREBASE
+        // ========================================
+
+        await db
+          .collection("employees")
+          .add({
+            code: code,
+            name: name,
+            dept: dept,
+            password: password
+          });
+
+
+        success++;
+      }
+
+
+      // ==========================================
+      // THÔNG BÁO KẾT QUẢ
+      // ==========================================
+
+      let message =
+        "📥 KẾT QUẢ IMPORT NHÂN VIÊN\n\n" +
+
+        "✅ Thành công: " +
+        success +
+        "\n" +
+
+        "⚠️ Trùng mã NV: " +
+        duplicate +
+        "\n" +
+
+        "❌ Lỗi: " +
+        error;
+
+
+      if (errorList.length > 0) {
+
+        message +=
+          "\n\nChi tiết lỗi:\n" +
+          errorList.join("\n");
+
+      }
+
+
+      alert(message);
+
+
+    } catch (err) {
+
+      console.error(
+        "Lỗi import nhân viên:",
+        err
+      );
+
+      alert(
+        "❌ Không thể import file nhân viên.\n\n" +
+        err.message
+      );
+
+    }
+
+
+    // Cho phép chọn lại cùng một file
+    event.target.value = "";
+
+  });
+
+
+// ============================================================
+// IMPORT ĐĂNG KÝ TĂNG CA
+// ============================================================
+
+document
+  .getElementById("fileOT")
+  .addEventListener("change", async function(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+
+    try {
+
+      const text = await file.text();
+
+      const cleanText =
+        text.replace(/^\uFEFF/, "");
+
+
+      const lines =
+        cleanText
+          .split(/\r?\n/)
+          .filter(line => line.trim() !== "");
+
+
+      if (lines.length < 2) {
+
+        alert(
+          "❌ File không có dữ liệu."
+        );
+
+        return;
+      }
+
+
+      // ==========================================
+      // KIỂM TRA HEADER
+      // ==========================================
+
+      const header =
+        parseCSVLine(lines[0])
+          .map(x => x.toLowerCase());
+
+
+      const requiredHeader = [
+        "emp",
+        "empname",
+        "shift",
+        "date",
+        "start",
+        "end",
+        "work"
+      ];
+
+
+      const headerOK =
+        requiredHeader.every(
+          (item, index) =>
+            header[index] === item
+        );
+
+
+      if (!headerOK) {
+
+        alert(
+          "❌ Sai định dạng file tăng ca.\n\n" +
+          "Header phải là:\n" +
+          "emp,empName,shift,date,start,end,work\n\n" +
+          "Hãy bấm 'Tải mẫu tăng ca' để lấy file đúng định dạng."
+        );
+
+        return;
+      }
+
+
+      // ==========================================
+      // THỐNG KÊ
+      // ==========================================
+
+      let success = 0;
+
+      let duplicate = 0;
+
+      let error = 0;
+
+      const errorList = [];
+
+
+      // ==========================================
+      // ĐỌC TỪNG DÒNG
+      // ==========================================
+
+      for (
+        let i = 1;
+        i < lines.length;
+        i++
+      ) {
+
+        const row =
+          parseCSVLine(lines[i]);
+
+
+        if (row.length < 7) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: thiếu dữ liệu`
+          );
+
+          continue;
+        }
+
+
+        const emp =
+          row[0].trim();
+
+        const empName =
+          row[1].trim();
+
+        const shift =
+          row[2].trim();
+
+        const date =
+          row[3].trim();
+
+        const start =
+          row[4].trim();
+
+        const end =
+          row[5].trim();
+
+        const work =
+          row.slice(6)
+            .join(",")
+            .trim();
+
+
+        // ========================================
+        // KIỂM TRA DỮ LIỆU
+        // ========================================
+
+        if (
+          !emp ||
+          !date ||
+          !start ||
+          !end
+        ) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: thiếu mã NV/ngày/giờ`
+          );
+
+          continue;
+        }
+
+
+        // ========================================
+        // KIỂM TRA NHÂN VIÊN CÓ TỒN TẠI
+        // ========================================
+
+        const empSnap =
+          await db
+            .collection("employees")
+            .where("code", "==", emp)
+            .limit(1)
+            .get();
+
+
+        if (empSnap.empty) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: không tìm thấy mã NV ${emp}`
+          );
+
+          continue;
+        }
+
+
+        // ========================================
+        // LẤY TÊN NV TỪ DATABASE
+        // Không phụ thuộc tên trong file
+        // ========================================
+
+        const employeeData =
+          empSnap.docs[0].data();
+
+        const realEmpName =
+          employeeData.name || empName;
+
+
+        // ========================================
+        // KIỂM TRA CA
+        // ========================================
+
+        const shiftMatch =
+          String(shift).match(/[1-4]/);
+
+
+        if (!shiftMatch) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: ca phải là 1, 2, 3 hoặc 4`
+          );
+
+          continue;
+        }
+
+
+        const realShift =
+          shiftMatch[0];
+
+
+        // ========================================
+        // KIỂM TRA NGÀY
+        // YYYY-MM-DD
+        // ========================================
+
+        if (
+          !/^\d{4}-\d{2}-\d{2}$/.test(date)
+        ) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: ngày phải có dạng YYYY-MM-DD`
+          );
+
+          continue;
+        }
+
+
+        // ========================================
+        // KIỂM TRA GIỜ
+        // HH:MM
+        // ========================================
+
+        if (
+          !/^\d{2}:\d{2}$/.test(start) ||
+          !/^\d{2}:\d{2}$/.test(end)
+        ) {
+
+          error++;
+
+          errorList.push(
+            `Dòng ${i + 1}: giờ phải có dạng HH:MM`
+          );
+
+          continue;
+        }
+
+
+        // ========================================
+        // KIỂM TRA TRÙNG
+        //
+        // Cùng:
+        // Mã NV
+        // Ngày
+        // Ca
+        // Bắt đầu
+        // Kết thúc
+        // ========================================
+
+        const duplicateSnap =
+          await db
+            .collection("overtime")
+            .where("emp", "==", emp)
+            .where("date", "==", date)
+            .where("shift", "==", realShift)
+            .where("start", "==", start)
+            .where("end", "==", end)
+            .limit(1)
+            .get();
+
+
+        if (!duplicateSnap.empty) {
+
+          duplicate++;
+
+          continue;
+        }
+
+
+        // ========================================
+        // LƯU FIREBASE
+        // ========================================
+
+        await db
+          .collection("overtime")
+          .add({
+
+            emp: emp,
+
+            empName: realEmpName,
+
+            shift: realShift,
+
+            date: date,
+
+            start: start,
+
+            end: end,
+
+            work: work
+
+          });
+
+
+        success++;
+
+      }
+
+
+      // ==========================================
+      // THÔNG BÁO KẾT QUẢ
+      // ==========================================
+
+      let message =
+        "📥 KẾT QUẢ IMPORT TĂNG CA\n\n" +
+
+        "✅ Thành công: " +
+        success +
+        "\n" +
+
+        "⚠️ Trùng: " +
+        duplicate +
+        "\n" +
+
+        "❌ Lỗi: " +
+        error;
+
+
+      if (errorList.length > 0) {
+
+        message +=
+          "\n\nChi tiết lỗi:\n" +
+          errorList.join("\n");
+
+      }
+
+
+      alert(message);
+
+
+    } catch (err) {
+
+      console.error(
+        "Lỗi import tăng ca:",
+        err
+      );
+
+      alert(
+        "❌ Không thể import file tăng ca.\n\n" +
+        err.message
+      );
+
+    }
+
+
+    // Cho phép chọn lại cùng một file
+    event.target.value = "";
+
+  });
+
+
+// ============================================================
+// CHỐNG BẤM LƯU 2 LẦN
+// ============================================================
+
+let isSavingOT = false;
+
+
+// ============================================================
+// LƯU TĂNG CA THỦ CÔNG
+// ============================================================
+
+async function saveOT() {
+
+  // Chặn double click
+  if (isSavingOT) {
     return;
   }
-  const empName = document.getElementById("otEmp").selectedOptions[0]?.dataset.name || "";
-  const ot = {
-    emp: empCode,
-    empName: empName,
-    date: document.getElementById("otDate").value,
-    start: document.getElementById("otStart").value,
-    end: document.getElementById("otEnd").value,
-    shift: document.getElementById("otShift").value,
-    work: document.getElementById("otWork").value.trim()
-  };
-  try {
-    await db.collection("overtime").add(ot);
-    alert("Đã lưu lịch tăng ca");
-    // reset form
-    document.getElementById("otEmp").value="";
-    document.getElementById("otDate").value="";
-    document.getElementById("otStart").value="";
-    document.getElementById("otEnd").value="";
-    document.getElementById("otShift").value="1";
-    document.getElementById("otWork").value="";
-  } catch(err){
-    console.error("Lỗi khi lưu:", err);
-    alert("Không thể lưu, kiểm tra console");
+
+
+  const empCode =
+    document.getElementById("otEmp").value;
+
+
+  if (!empCode) {
+
+    alert(
+      "Vui lòng chọn nhân viên"
+    );
+
+    return;
   }
+
+
+  const date =
+    document.getElementById("otDate").value;
+
+  const start =
+    document.getElementById("otStart").value;
+
+  const end =
+    document.getElementById("otEnd").value;
+
+  const shift =
+    document.getElementById("otShift").value;
+
+  const work =
+    document.getElementById("otWork").value.trim();
+
+
+  if (!date) {
+
+    alert(
+      "Vui lòng chọn ngày tăng ca"
+    );
+
+    return;
+  }
+
+
+  if (!start || !end) {
+
+    alert(
+      "Vui lòng nhập thời gian tăng ca"
+    );
+
+    return;
+  }
+
+
+  const empName =
+    document
+      .getElementById("otEmp")
+      .selectedOptions[0]
+      ?.dataset.name || "";
+
+
+  const btn =
+    document.querySelector(
+      '#overtime button[onclick="saveOT()"]'
+    );
+
+
+  // Khóa nút ngay lập tức
+  isSavingOT = true;
+
+
+  if (btn) {
+
+    btn.disabled = true;
+
+    btn.innerText =
+      "Đang lưu...";
+
+  }
+
+
+  try {
+
+    // ========================================
+    // KIỂM TRA TRÙNG
+    // ========================================
+
+    const duplicateSnap =
+      await db
+        .collection("overtime")
+        .where("emp", "==", empCode)
+        .where("date", "==", date)
+        .where("shift", "==", shift)
+        .where("start", "==", start)
+        .where("end", "==", end)
+        .limit(1)
+        .get();
+
+
+    if (!duplicateSnap.empty) {
+
+      alert(
+        "⚠️ Đăng ký tăng ca này đã tồn tại!"
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // LƯU
+    // ========================================
+
+    await db
+      .collection("overtime")
+      .add({
+
+        emp: empCode,
+
+        empName: empName,
+
+        date: date,
+
+        start: start,
+
+        end: end,
+
+        shift: shift,
+
+        work: work
+
+      });
+
+
+    alert(
+      "✅ Đã lưu lịch tăng ca"
+    );
+
+
+    // ========================================
+    // RESET FORM
+    // ========================================
+
+    document.getElementById("otEmp").value = "";
+
+    document.getElementById("otDate").value = "";
+
+    document.getElementById("otStart").value = "";
+
+    document.getElementById("otEnd").value = "";
+
+    document.getElementById("otShift").value = "1";
+
+    document.getElementById("otWork").value = "";
+
+
+  } catch (err) {
+
+    console.error(
+      "Lỗi khi lưu:",
+      err
+    );
+
+    alert(
+      "❌ Không thể lưu.\n\n" +
+      err.message
+    );
+
+  } finally {
+
+    // Mở khóa
+    isSavingOT = false;
+
+
+    if (btn) {
+
+      btn.disabled = false;
+
+      btn.innerText = "Lưu";
+
+    }
+
+  }
+
 }
+Được gửi từ iPhone của tôi
   function loadEmployees(){
   db.collection("employees").onSnapshot(snapshot=>{
     const tbody = document.getElementById("employeeTable");
