@@ -151,7 +151,24 @@ tr:hover{background:#f1f5f9}
   #myovertime .report-filter{flex-direction:column;align-items:stretch!important;}
   #myovertime .report-filter button{width:100%;padding:12px;}
 }
-	/* Nút Xóa nhân viên */
+	/* Nút Sửa */
+.btn-edit {
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: 0.2s;
+}
+
+.btn-edit:hover {
+    background: #0b5ed7;
+}
+
+/* Nút Xóa */
 .btn-delete {
     background: #ef4444;
     color: #fff;
@@ -160,13 +177,15 @@ tr:hover{background:#f1f5f9}
     padding: 8px 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: 0.2s;
 }
 
 .btn-delete:hover {
     background: #dc2626;
 }
 
-.btn-delete:active {
+.btn-delete:active,
+.btn-edit:active {
     transform: scale(0.97);
 }
 </style>
@@ -1118,7 +1137,7 @@ function loadOT() {
 
           <td>
             <button
-              class="btn btn-warning btn-sm"
+              class="btn-edit"
               onclick="editOT('${doc.id}')">
               Sửa
             </button>
@@ -2381,7 +2400,7 @@ async function saveOT() {
             <td>${e.name}</td>
             <td>${e.dept}</td>
             <td>
-              <button onclick="editEmployee('${doc.id}')">Sửa</button>
+              <button class="btn-edit" onclick="editEmployee('${doc.id}')">Sửa</button>
               <button class="btn-delete" onclick="deleteEmployee('${doc.id}')">Xóa</button>
             </td>
           </tr>`;
