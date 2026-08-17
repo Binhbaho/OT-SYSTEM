@@ -151,6 +151,24 @@ tr:hover{background:#f1f5f9}
   #myovertime .report-filter{flex-direction:column;align-items:stretch!important;}
   #myovertime .report-filter button{width:100%;padding:12px;}
 }
+	/* Nút Xóa nhân viên */
+.btn-delete {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+}
+
+.btn-delete:active {
+    transform: scale(0.97);
+}
 </style>
 </head>
 <body>
@@ -2364,7 +2382,7 @@ async function saveOT() {
             <td>${e.dept}</td>
             <td>
               <button onclick="editEmployee('${doc.id}')">Sửa</button>
-              <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
+              <button class="btn-delete" onclick="deleteEmployee('${doc.id}')">🗑️Xóa</button>
             </td>
           </tr>`;
       });
