@@ -23,7 +23,7 @@ button{background:#2563eb;color:#fff;border:none;padding:10px 14px;border-radius
 button:hover{background:#1e40af}
 
 /* Layout */
-.app{height:100vh;display:none}
+.app{height:100vh}
 .layout{display:flex;height:100%}
 .sidebar{width:240px;background:#1e40af;color:#fff;padding:15px}
 .sidebar h2{margin-bottom:15px}
@@ -173,19 +173,33 @@ tr:hover{background:#f1f5f9}
         <a href="#" onclick="showPage('home')">Trang chủ</a>
         <a href="#" onclick="showPage('employees')">Quản lý nhân viên</a>
         <a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
-        <a href="#" onclick="showPage('otCleanup')">Dọn dữ liệu OT</a>
+        <a href="#" onclick="showPage('otCleanup')">🗑️ Dọn dữ liệu OT</a>
         <a href="#" onclick="showPage('report')">Báo cáo</a>
       </div>
       <div id="empMenu">
   <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
   <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
-  <a href="#" onclick="showPage('changePassword')">Đổi mật khẩu</a>
+  <a href="#" onclick="showPage('changePassword')">🔐 Đổi mật khẩu</a>
 </div>
       <a href="#" onclick="logout()">Đăng xuất</a>
     </div>
 
     <div class="main">
-      <div class="header"><span id="welcome"></span></div>
+      <div class="header" style="display:flex;align-items:center;justify-content:space-between;gap:15px;">
+        <span id="welcome"></span>
+        <div id="notificationArea" style="display:none;position:relative;">
+          <button type="button" onclick="toggleNotifications()" style="position:relative;background:none;border:0;font-size:26px;cursor:pointer;padding:4px 10px;">🔔
+            <span id="notificationBadge" style="display:none;position:absolute;top:-2px;right:0;background:#dc2626;color:white;border-radius:999px;min-width:19px;height:19px;line-height:19px;font-size:11px;font-weight:700;text-align:center;padding:0 4px;"></span>
+          </button>
+          <div id="notificationPanel" style="display:none;position:absolute;right:0;top:42px;width:min(380px,90vw);background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.18);z-index:9999;color:#0f172a;overflow:hidden;">
+            <div style="padding:13px 15px;font-weight:700;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+              <span>🔔 Thông báo</span>
+              <button type="button" onclick="markAllNotificationsRead()" style="font-size:12px;padding:5px 8px;">Đánh dấu đã đọc</button>
+            </div>
+            <div id="notificationList" style="max-height:430px;overflow:auto;"></div>
+          </div>
+        </div>
+      </div>
       <div class="content">
 
 <!-- Dashboard -->
@@ -257,7 +271,9 @@ tr:hover{background:#f1f5f9}
             <button onclick="saveEmployee()">Lưu</button>
           </div>
           <div style="font-size:13px;color:#64748b;margin-top:12px;">↕️ Cuộn bảng để xem các nhân viên bên dưới. Khi bấm <b>Sửa</b>, thông tin sẽ hiển thị ở các ô phía trên.</div>
-          <div class="employee-list-wrap">
+          
+		<div class="employee-list-wrap">
+
             <table>
               <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
               <tbody id="employeeTable"></tbody>
@@ -548,6 +564,7 @@ async function login(){
       document.getElementById("adminMenu").style.display="none";
       showPage("myovertime");
       renderMyOT();
+      initNotifications();
     }else{
       alert("Sai tài khoản hoặc mật khẩu");
     }
@@ -1218,9 +1235,25 @@ function editOT(id) {
 }
 
 // Hàm xóa: xóa document khỏi Firestore
-function deleteOT(id) {
-  if (confirm("Bạn có chắc muốn xóa tăng ca này?")) {
-    db.collection("overtime").doc(id).delete();
+async function deleteOT(id) {
+  if (!confirm("Bạn có chắc muốn xóa tăng ca này?")) return;
+  try {
+    const ref = db.collection("overtime").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return;
+    const o = snap.data();
+    await ref.delete();
+    await createOTNotification({
+      emp: o.emp,
+      empName: o.empName || "",
+      type: "delete_ot",
+      title: "Lịch tăng ca đã bị xóa",
+      message: "Một lịch tăng ca của bạn đã bị xóa",
+      ot: o
+    });
+  } catch (err) {
+    console.error("Lỗi xóa OT:", err);
+    alert("❌ Không thể xóa tăng ca.\n\n" + err.message);
   }
 }
   // hàm tìm kiếm tăng ca
@@ -1263,6 +1296,119 @@ function resetSearch() {
 
   // Gọi lại loadOT để tải dữ liệu mới nhất từ Firestore
   loadOT();
+}
+
+// ================== THÔNG BÁO TĂNG CA ==================
+let notificationUnsubscribe = null;
+let notificationData = [];
+
+function initNotifications() {
+  const area = document.getElementById("notificationArea");
+  if (!area || !currentUser || currentUser.role !== "emp") return;
+  area.style.display = "block";
+
+  if (notificationUnsubscribe) notificationUnsubscribe();
+
+  notificationUnsubscribe = db.collection("notifications")
+    .where("emp", "==", currentUser.code)
+    .onSnapshot(snapshot => {
+      notificationData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      notificationData.sort((a,b) => {
+        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+      renderNotifications();
+    }, err => {
+      console.error("Lỗi tải thông báo:", err);
+    });
+}
+
+function formatNotificationTime(ts) {
+  if (!ts) return "Đang cập nhật...";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (isNaN(d.getTime())) return "Đang cập nhật...";
+  const pad = n => String(n).padStart(2,"0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())} ${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+}
+
+function renderNotifications() {
+  const badge = document.getElementById("notificationBadge");
+  const list = document.getElementById("notificationList");
+  if (!badge || !list) return;
+
+  const unread = notificationData.filter(n => !n.read).length;
+  badge.style.display = unread ? "block" : "none";
+  badge.textContent = unread > 99 ? "99+" : unread;
+
+  if (!notificationData.length) {
+    list.innerHTML = '<div style="padding:25px;text-align:center;color:#64748b;">Không có thông báo.</div>';
+    return;
+  }
+
+  list.innerHTML = notificationData.map(n => {
+    const o = n.ot || {};
+    const bg = n.read ? "white" : "#eff6ff";
+    const icon = n.type === "new_ot" ? "🟢" : n.type === "update_ot" ? "🟡" : "🔴";
+    const detail = o.date ? `Ngày tăng ca: <b>${o.date}</b><br>Ca: <b>${o.shift || ""}</b> · ${o.start || ""} → ${o.end || ""}${o.work ? `<br>Công việc: ${escapeNotificationHtml(o.work)}` : ""}` : "";
+    return `<div onclick="openNotification('${n.id}')" style="padding:13px 15px;border-bottom:1px solid #e2e8f0;background:${bg};cursor:pointer;line-height:1.5;">
+      <div style="font-weight:${n.read ? 600 : 750};">${icon} ${escapeNotificationHtml(n.title || "Thông báo")}</div>
+      <div style="font-size:13px;margin-top:3px;">${escapeNotificationHtml(n.message || "")}</div>
+      ${detail ? `<div style="font-size:12px;color:#475569;margin-top:5px;">${detail}</div>` : ""}
+      <div style="font-size:11px;color:#64748b;margin-top:7px;">🕐 ${formatNotificationTime(n.createdAt)}</div>
+    </div>`;
+  }).join("");
+}
+
+function escapeNotificationHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function toggleNotifications() {
+  const panel = document.getElementById("notificationPanel");
+  if (!panel) return;
+  panel.style.display = panel.style.display === "block" ? "none" : "block";
+}
+
+async function openNotification(id) {
+  try {
+    const n = notificationData.find(x => x.id === id);
+    if (n && !n.read) await db.collection("notifications").doc(id).update({ read: true, readAt: firebase.firestore.FieldValue.serverTimestamp() });
+  } catch (err) {
+    console.error("Lỗi đánh dấu thông báo:", err);
+  }
+}
+
+async function markAllNotificationsRead() {
+  const unread = notificationData.filter(n => !n.read);
+  if (!unread.length) return;
+  try {
+    const batch = db.batch();
+    unread.forEach(n => batch.update(db.collection("notifications").doc(n.id), { read: true, readAt: firebase.firestore.FieldValue.serverTimestamp() }));
+    await batch.commit();
+  } catch (err) {
+    console.error("Lỗi đánh dấu tất cả thông báo:", err);
+  }
+}
+
+async function createOTNotification({emp, empName, type, title, message, ot}) {
+  if (!emp) return;
+  await db.collection("notifications").add({
+    emp: String(emp).trim(),
+    empName: empName || "",
+    type,
+    title,
+    message,
+    ot: {
+      date: ot?.date || "",
+      shift: ot?.shift || "",
+      start: ot?.start || "",
+      end: ot?.end || "",
+      work: ot?.work || ""
+    },
+    read: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
 // ================== Lịch tăng ca của nhân viên ==================
@@ -1913,26 +2059,26 @@ document
         // LƯU FIREBASE
         // ========================================
 
-        await db
-          .collection("overtime")
-          .add({
+        const importedOT = {
+          emp: emp,
+          empName: realEmpName,
+          shift: realShift,
+          date: date,
+          start: start,
+          end: end,
+          work: work
+        };
 
-            emp: emp,
+        await db.collection("overtime").add(importedOT);
 
-            empName: realEmpName,
-
-            shift: realShift,
-
-            date: date,
-
-            start: start,
-
-            end: end,
-
-            work: work
-
-          });
-
+        await createOTNotification({
+          emp: emp,
+          empName: realEmpName,
+          type: "new_ot",
+          title: "Tăng ca mới",
+          message: "Admin vừa cập nhật lịch tăng ca cho bạn",
+          ot: importedOT
+        });
 
         success++;
 
@@ -2131,11 +2277,28 @@ async function saveOT() {
     };
 
     if(window.currentEditId){
-      await db.collection("overtime").doc(window.currentEditId).update(otData);
+      const editId = window.currentEditId;
+      await db.collection("overtime").doc(editId).update(otData);
+      await createOTNotification({
+        emp: empCode,
+        empName: empName,
+        type: "update_ot",
+        title: "Lịch tăng ca đã thay đổi",
+        message: "Admin vừa cập nhật lại lịch tăng ca cho bạn",
+        ot: otData
+      });
       window.currentEditId = null;
       alert("✅ Đã cập nhật lịch tăng ca");
     }else{
-      await db.collection("overtime").add(otData);
+      const newRef = await db.collection("overtime").add(otData);
+      await createOTNotification({
+        emp: empCode,
+        empName: empName,
+        type: "new_ot",
+        title: "Tăng ca mới",
+        message: "Admin vừa cập nhật lịch tăng ca cho bạn",
+        ot: otData
+      });
       alert("✅ Đã lưu lịch tăng ca");
     }
 
