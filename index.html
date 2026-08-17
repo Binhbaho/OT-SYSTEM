@@ -1124,7 +1124,7 @@ function loadOT() {
             </button>
 
             <button
-              class="btn btn-danger btn-sm"
+              class="btn-delete"
               onclick="deleteOT('${doc.id}')">
               Xóa
             </button>
@@ -2382,7 +2382,7 @@ async function saveOT() {
             <td>${e.dept}</td>
             <td>
               <button onclick="editEmployee('${doc.id}')">Sửa</button>
-              <button class="btn-delete" onclick="deleteEmployee('${doc.id}')">🗑️Xóa</button>
+              <button class="btn-delete" onclick="deleteEmployee('${doc.id}')">Xóa</button>
             </td>
           </tr>`;
       });
