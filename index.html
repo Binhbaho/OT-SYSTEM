@@ -2390,24 +2390,29 @@ async function saveOT() {
 }
 
   function loadEmployees(){
-  db.collection("employees").onSnapshot(snapshot=>{
-    const tbody = document.getElementById("employeeTable");
-    if(tbody){
-      tbody.innerHTML="";
-		let stt=1;
-      snapshot.forEach(doc=>{
-        const e=doc.data();
-        tbody.innerHTML+=`
-          <tr>
-		  	<td>${stt++}</td>
-            <td>${e.code}</td>
-            <td>${e.name}</td>
-            <td>${e.dept}</td>
-            <td>
-              <button class="btn-edit" onclick="editEmployee('${doc.id}')">Sửa</button>
-              <button class="btn-delete" onclick="deleteEmployee('${doc.id}')">Xóa</button>
-            </td>
-          </tr>`;
+  db.collection("employees")
+    .orderBy("code", "asc")
+    .onSnapshot(snapshot=>{
+      const tbody = document.getElementById("employeeTable");
+
+      if(tbody){
+        tbody.innerHTML="";
+        let stt=1;
+
+        snapshot.forEach(doc=>{
+          const e=doc.data();
+
+          tbody.innerHTML+=`
+            <tr>
+              <td>${stt++}</td>
+              <td>${e.code}</td>
+              <td>${e.name}</td>
+              <td>${e.dept}</td>
+              <td>
+                <button onclick="editEmployee('${doc.id}')">Sửa</button>
+                <button onclick="deleteEmployee('${doc.id}')">Xóa</button>
+              </td>
+            </tr>`;
       });
     }
     // cập nhật số lượng nhân viên
