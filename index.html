@@ -60,13 +60,12 @@ tr:hover{background:#f1f5f9}
 /* Bảng danh sách nhân viên: cuộn riêng, giữ khu vực nhập liệu ở phía trên */
 .employee-list-wrap{
   background:#fff;
-  padding:15px;
+  padding:0 0 15px 0;
   border-radius:12px;
   box-shadow:0 3px 10px rgba(0,0,0,.08);
   margin-top:15px;
   max-height:430px;
-  overflow-y:auto;
-  overflow-x:auto;
+  overflow:auto;
 }
 .employee-list-wrap table{
   width:100%;
@@ -312,7 +311,7 @@ tr:hover{background:#f1f5f9}
 		<div class="employee-list-wrap">
 
             <table>
-              <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
+              <thead><tr><th>STT</th><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
               <tbody id="employeeTable"></tbody>
             </table>
           </div>
@@ -2392,10 +2391,12 @@ async function saveOT() {
     const tbody = document.getElementById("employeeTable");
     if(tbody){
       tbody.innerHTML="";
+		let stt=1;
       snapshot.forEach(doc=>{
         const e=doc.data();
         tbody.innerHTML+=`
           <tr>
+		  	<td>${stt++}</td>
             <td>${e.code}</td>
             <td>${e.name}</td>
             <td>${e.dept}</td>
