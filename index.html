@@ -247,6 +247,16 @@ tr:hover{background:#f1f5f9}
 
 }
 
+	#searchDate:before {
+  content: "Ngày";
+  color: #999;
+  margin-right: 8px;
+}
+
+#searchDate:focus:before,
+#searchDate:valid:before {
+  content: "";
+}
 </style>
 </head>
 <body>
@@ -444,7 +454,7 @@ tr:hover{background:#f1f5f9}
             <div class="search-bar"> //style="display:flex; gap:8px; margin:10px 0;">
               <input type="text" id="searchEmp" placeholder="Mã NV">
               <input type="text" id="searchShift" placeholder="Ca">
-              <input type="date" id="searchDate">
+              <input type="date" id="searchDate" aria-label="Ngày">
               <input type="text" id="searchWork" placeholder="Công việc">
               <button onclick="searchOT()">Tìm kiếm</button>
               <button onclick="resetSearch()">Reset</button>
