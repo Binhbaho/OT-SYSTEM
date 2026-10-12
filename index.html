@@ -144,11 +144,49 @@ tr:hover{background:#f1f5f9}
 #overtime .table-scroll-safe thead th, #myovertime .table-scroll-safe thead th{
   position:sticky; top:0; z-index:2; background:#f0f0f0;
 }
-@media(max-width:768px){
+/*@media(max-width:768px){
   #overtime .table-scroll-safe, #myovertime .table-scroll-safe{max-height:360px;}
   #overtime .table-scroll-safe table, #myovertime .table-scroll-safe table{min-width:760px;}
   #myovertime .report-filter{flex-direction:column;align-items:stretch!important;}
   #myovertime .report-filter button{width:100%;padding:12px;}
+}*/
+	@media(max-width:768px){
+
+  #overtime .table-scroll-safe,
+  #myovertime .table-scroll-safe{
+    max-height:360px;
+  }
+
+  #overtime .table-scroll-safe table,
+  #myovertime .table-scroll-safe table{
+    min-width:760px;
+  }
+
+  #overtime .report-filter,
+  #myovertime .report-filter{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch !important;
+    gap:10px;
+  }
+
+  #overtime .report-filter input,
+  #overtime .report-filter select,
+  #overtime .report-filter button,
+  #myovertime .report-filter input,
+  #myovertime .report-filter select,
+  #myovertime .report-filter button{
+    width:100%;
+  }
+
+  .filter-buttons{
+    display:flex;
+    gap:10px;
+  }
+
+  .filter-buttons button{
+    flex:1;
+  }
 }
 	/* Nút Sửa */
 .btn-edit {
