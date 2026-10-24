@@ -1696,8 +1696,11 @@ if(o.date === today){
   .get()
   .then(snapshot => {
 
-      snapshot.forEach(doc => {
+      const docs = snapshot.docs.sort((a,b)=>{
+          return b.data().date.localeCompare(a.data().date);
+      });
 
+      docs.forEach(doc => {
         const o = doc.data();
 
         // lọc theo ngày
@@ -1722,25 +1725,14 @@ if(o.date === today){
 
         // render dòng
         const row = document.createElement("tr");
-
-const today =
-    new Date()
-    .toISOString()
-    .split("T")[0];
-
-if(o.date === today){
-    row.classList.add("today-ot");
-}
-
-row.innerHTML = `
-  <td>${o.date}</td>
-  <td>${o.shift}</td>
-  <td>${o.start}</td>
-  <td>${o.end}</td>
-  <td>${o.work}</td>
-`;
-
-tbody.appendChild(row);
+        row.innerHTML = `
+          <td>${o.date}</td>
+          <td>${o.shift}</td>
+          <td>${o.start}</td>
+          <td>${o.end}</td>
+          <td>${o.work}</td>
+        `;
+        tbody.appendChild(row);
       });
 
       // Nếu không có dữ liệu thì hiển thị thông báo
