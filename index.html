@@ -662,16 +662,38 @@ async function login(){
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
 
-  if(u==="Admin" && p==="6180"){
-    currentUser = {role:"admin",name:"Quản trị"};
-    document.getElementById("loginPage").style.display="none";
-    document.getElementById("app").style.display="block";
-    document.getElementById("welcome").innerText="Xin chào Admin";
-    document.getElementById("empMenu").style.display="none";
+  const adminSnap = await db
+  .collection("admins")
+  .where("username","==",u)
+  .where("password","==",p)
+  .limit(1)
+  .get();
+
+if(!adminSnap.empty){
+
+    const admin = adminSnap.docs[0].data();
+
+    currentUser = {
+      role: "admin",
+      name: admin.name
+    };
+
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("app").style.display = "block";
+
+    document.getElementById("welcome").innerText =
+      "Xin chào " + admin.name;
+
+    document.getElementById("empMenu").style.display = "none";
+
     showPage("home");
+
     loadEmployees();
     loadOT();
-  }else{
+
+    return;
+}
+  else{
     const snap = await db.collection("employees").where("code","==",u).where("password","==",p).get();
     if(!snap.empty){
       const emp = snap.docs[0].data();
