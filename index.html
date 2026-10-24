@@ -625,8 +625,6 @@ tr:hover{background:#f1f5f9}
     <label for="totalEnd">Đến ngày:</label>
     <input type="date" id="totalEnd">
 
-    <span id="totalHour">Tổng giờ: 0</span>
-
     <button onclick="calcTotal()">Lọc</button>
     <button onclick="resetTotal()">Reset</button>
   </div>
@@ -1775,7 +1773,6 @@ function resetMyOT() {
       tbody.appendChild(row);
     }
 
-    document.getElementById("totalHour").innerText = "Tổng giờ: "+totalHour;
     document.getElementById("myHour").innerText = totalHour;
   });
 }
@@ -1783,7 +1780,6 @@ function resetMyOT() {
   function resetTotal() {
     document.getElementById("totalStart").value="";
     document.getElementById("totalEnd").value="";
-    document.getElementById("totalHour").innerText="Tổng giờ: 0";
     document.getElementById("myHour").innerText="0";
     document.querySelector("#reportDetailEmp tbody").innerHTML="";
   }
