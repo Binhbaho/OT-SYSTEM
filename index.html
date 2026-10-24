@@ -1195,7 +1195,7 @@ function loadOT() {
   }
 
   overtimeListener = db.collection("overtime")
-    .orderBy("date", "asc")
+    .orderBy("date", "desc")
     .onSnapshot(snapshot => {
 
     // ==========================================
