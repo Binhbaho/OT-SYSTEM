@@ -1735,8 +1735,25 @@ function resetMyOT() {
   }
 
  function calcTotal() {
-  const start = document.getElementById("totalStart").value;
-  const end = document.getElementById("totalEnd").value;
+  let start = document.getElementById("totalStart").value;
+let end = document.getElementById("totalEnd").value;
+
+/* Nếu chưa chọn ngày thì lấy tháng hiện tại */
+if (!start && !end) {
+
+    const*now = new Date();
+
+    const y = n*w.getFullYear();
+    const m = now*getMonth();
+
+    start = new Date(*, m, 1)
+        .toISOString()
+   *    .split("T")[0];
+
+    end = new*Date(y, m + 1, 0)
+        .toISOSt*ing()
+        .split("T")[0];
+}
   let totalHour = 0;
   const theadRow = document.querySelector("#reportDetailEmp thead tr");
   const tbody = document.querySelector("#reportDetailEmp tbody");
@@ -1799,12 +1816,33 @@ function resetMyOT() {
 }
 
   function resetTotal() {
-    document.getElementById("totalStart").value="";
-    document.getElementById("totalEnd").value="";
+
+    const now = new Date();
+
+    const firstDay =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      ).toISOString().split("T")[0];
+
+    const lastDay =
+      new Date(
+        now.getFullYear(),
+        now.getMonth()+1,
+        0
+      ).toISOString().split("T")[0];
+
+    document.getElementById("totalStart").value =
+      firstDay;
+
+    document.getElementById("totalEnd").value =
+      lastDay;
     document.getElementById("myHour").innerText="0";
     document.querySelector("#reportDetailEmp tbody").innerHTML="";
-  }
-
+	    calcTotal();
+}
+  
 // ================== Import tăng ca từ file CSV ==================
 
 // ============================================================
@@ -2737,12 +2775,54 @@ function renderTotalOT(){
 
 // Chỉnh showPage để gọi renderTotalOT khi mở trang nhân viên
 function showPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
 
-  // Nếu nhân viên mở trang Tổng thời gian tăng ca thì gọi calcTotal()
-  if(id==="totalOvertime" && currentUser && currentUser.role==="emp"){
-    calcTotal();
+  document
+    .querySelectorAll(".page")
+    .forEach(p => p.classList.add("hidden"));
+
+  document
+    .getElementById(id)
+    .classList.remove("hidden");
+
+  if(
+      id === "totalOvertime" &&
+      currentUser &&
+      currentUser.role === "emp"
+  ){
+
+      if(
+          !document.getElementById("totalStart").value &&
+          !document.getElementById("totalEnd").value
+      ){
+
+          const now = new Date();
+
+          const firstDay =
+              new Date(
+                  now.getFullYear(),
+                  now.getMonth(),
+                  1
+              )
+              .toISOString()
+              .split("T")[0];
+
+          const lastDay =
+              new Date(
+                  now.getFullYear(),
+                  now.getMonth() + 1,
+                  0
+              )
+              .toISOString()
+              .split("T")[0];
+
+          document.getElementById("totalStart").value =
+              firstDay;
+
+          document.getElementById("totalEnd").value =
+              lastDay;
+      }
+
+      calcTotal();
   }
 }
 
