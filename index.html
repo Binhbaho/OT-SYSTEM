@@ -96,6 +96,12 @@ tr:hover{background:#f1f5f9}
 }
 #reportDetail th {background:#f0f0f0;}
 #reportDetail td b {color:#007bff;}
+#reportDetailEmp thead th{
+    position: sticky;
+    top: 0;
+    background: #f0f0f0;
+    z-index: 2;
+}
 
 /* Responsive */
 @media(max-width:768px){
@@ -337,6 +343,16 @@ tr:hover{background:#f1f5f9}
 #searchDate:focus:before,
 #searchDate:valid:before {
   content: "";
+}
+.today-column{
+    background: #fff3cd !important;
+    font-weight: bold;
+}
+
+.sunday-column{
+    background: #fde2e2 !important;
+    color: #c1121f;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -1765,10 +1781,34 @@ function resetMyOT() {
       document.querySelector("#reportDetailEmp tbody");
   // Sinh cột
   theadRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
-  for (let d=1; d<=31; d++) {
-    theadRow.innerHTML += `<th>${d}</th>`;
-  }
-  theadRow.innerHTML += "<th>Total</th>";
+
+const now = new Date();
+const currentDay = now.getDate();
+const currentMonth = now.getMonth();
+const currentYear = now.getFullYear();
+
+for (let d = 1; d <= 31; d++) {
+
+    let className = "";
+
+    const checkDate =
+      new Date(currentYear, currentMonth, d);
+
+    // Chủ nhật
+    if (checkDate.getDay() === 0) {
+        className = "sunday-column";
+    }
+
+    // Ngày hiện tại ưu tiên hơn
+    if (d === currentDay) {
+        className = "today-column";
+    }
+
+    theadRow.innerHTML +=
+      `<th class="${className}">${d}</th>`;
+}
+
+theadRow.innerHTML += "<th>Total</th>";
 
   tbody.innerHTML = "";
 
