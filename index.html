@@ -121,6 +121,25 @@ tr:hover{background:#f1f5f9}
     padding: 12px;
     font-size: 16px;
   }
+	#totalOvertime .filter-bar{
+    display:flex !important;
+    flex-direction:column;
+    align-items:stretch !important;
+    gap:10px;
+}
+
+#totalOvertime .filter-bar input{
+    width:100%;
+}
+
+#totalOvertime .filter-buttons{
+    display:flex;
+    gap:10px;
+}
+
+#totalOvertime .filter-buttons button{
+    flex:1;
+}
 
 }
 
@@ -625,8 +644,10 @@ tr:hover{background:#f1f5f9}
     <label for="totalEnd">Đến ngày:</label>
     <input type="date" id="totalEnd">
 
-    <button onclick="calcTotal()">Lọc</button>
-    <button onclick="resetTotal()">Reset</button>
+    <div class="filter-buttons">
+  <button onclick="calcTotal()">Lọc</button>
+  <button onclick="resetTotal()">Reset</button>
+</div>
   </div>
 
   <!-- Card tổng giờ -->
