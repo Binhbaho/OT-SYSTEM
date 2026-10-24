@@ -655,6 +655,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let currentUser = null;
+let overtimeListener = null;
 
 // ================== Đăng nhập ==================
 async function login(){
@@ -1071,10 +1072,13 @@ function isToday(dateStr) {
 // ================== LOAD DỮ LIỆU TĂNG CA ==================
 function loadOT() {
 
-  // db.collection("overtime").onSnapshot(snapshot => {
-	  db.collection("overtime")
-	.orderBy("date", "asc")
-	.onSnapshot(snapshot => {
+  if (overtimeListener) {
+    overtimeListener();
+  }
+
+  overtimeListener = db.collection("overtime")
+    .orderBy("date", "asc")
+    .onSnapshot(snapshot => {
 
     // ==========================================
     // RESET DỮ LIỆU MỖI KHI FIREBASE CẬP NHẬT
@@ -1408,14 +1412,24 @@ function searchOT() {
   }
 }
 function resetSearch() {
-  // Xóa nội dung trong các ô tìm kiếm
+
   document.getElementById("searchEmp").value = "";
   document.getElementById("searchShift").value = "";
   document.getElementById("searchDate").value = "";
   document.getElementById("searchWork").value = "";
 
-  // Gọi lại loadOT để tải dữ liệu mới nhất từ Firestore
-  loadOT();
+  const rows = document.querySelectorAll("#otTable tr");
+
+  rows.forEach((row,index)=>{
+
+    row.style.display = "";
+
+    if(row.cells[0]){
+      row.cells[0].innerText = index + 1;
+    }
+
+  });
+
 }
 
 // ================== THÔNG BÁO TĂNG CA ==================
@@ -1481,7 +1495,15 @@ function renderNotifications() {
 }
 
 function escapeNotificationHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "\"":"&quot;",
+    "'":"&#39;"
+  })[c]);
+
 }
 
 function toggleNotifications() {
@@ -1556,7 +1578,14 @@ function renderMyOT() {
 
         // lọc theo từ khóa
         if (keyword) {
-          const check = o.date.toLowerCase().includes(keyword) || o.work.toLowerCase().includes(keyword);
+         const check =
+  String(o.date || "")
+    .toLowerCase()
+    .includes(keyword)
+  ||
+  String(o.work || "")
+    .toLowerCase()
+    .includes(keyword);
           if (!check) return;
         }
 
@@ -1583,30 +1612,15 @@ function renderMyOT() {
 
 
 function resetMyOT() {
-  // xóa filter
+
   document.getElementById("myStart").value = "";
   document.getElementById("myEnd").value = "";
   document.getElementById("search").value = "";
 
-  // render lại toàn bộ dữ liệu
-  const tbody = document.getElementById("myTable");
-  tbody.innerHTML = "";
+  renderMyOT();
 
-  db.collection("overtime").get().then(snapshot => {
-    snapshot.forEach(doc => {
-      const o = doc.data();
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${o.date}</td>
-        <td>${o.shift}</td>
-        <td>${o.start}</td>
-        <td>${o.end}</td>
-        <td>${o.work}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  });
 }
+
 
 // ================== Tính tổng giờ tăng ca theo khoảng ngày cho nhân viên ==================
 // Sinh cột 1..31 + Total
@@ -1698,7 +1712,7 @@ function resetMyOT() {
     document.getElementById("totalEnd").value="";
     document.getElementById("totalHour").innerText="Tổng giờ: 0";
     document.getElementById("myHour").innerText="0";
-    document.querySelector("#reportDetail tbody").innerHTML="";
+    document.querySelector("#reportDetailEmp tbody").innerHTML="";
   }
 
 // ================== Import tăng ca từ file CSV ==================
@@ -2410,7 +2424,7 @@ async function saveOT() {
       window.currentEditId = null;
       alert("✅ Đã cập nhật lịch tăng ca");
     }else{
-      const newRef = await db.collection("overtime").add(otData);
+      await db.collection("overtime").add(otData);
       await createOTNotification({
         emp: empCode,
         empName: empName,
@@ -2498,7 +2512,14 @@ async function saveOT() {
     }
     // cập nhật số lượng nhân viên
     document.getElementById("sEmp").innerText = snapshot.size;
-    document.getElementById("rEmp").innerText = snapshot.size;
+document.getElementById("rEmp").innerText = snapshot.size;
+
+const totalEmployees =
+  document.getElementById("totalEmployees");
+
+if(totalEmployees){
+  totalEmployees.innerText = snapshot.size;
+}
     // cập nhật dropdown chọn nhân viên trong form OT
     const sel = document.getElementById("otEmp");
     if(sel){
@@ -2529,8 +2550,15 @@ function filterReport() {
       let hours = 0;
       if (o.start && o.end) {
         const s = new Date("1970-01-01T" + o.start + ":00");
-        const e = new Date("1970-01-01T" + o.end + ":00");
-        hours = (e - s) / 1000 / 3600;
+
+let e = new Date("1970-01-01T" + o.end + ":00");
+
+if (e < s) {
+  e.setHours(e.getHours() + 24);
+}
+
+hours = (e - s) / 1000 / 3600;
+
         totalHour += hours;
       }
 
