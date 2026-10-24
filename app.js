@@ -464,6 +464,7 @@ function loadOT() {
     // ==========================================
 
     let totalHour = 0;
+    let totalHourToday = 0;
 
     // Nhân viên tăng ca hôm nay
     const empTodaySet = new Set();
@@ -539,6 +540,9 @@ function loadOT() {
       // ========================================
 
       if (o.date && isToday(o.date.trim())) {
+
+        // Tổng giờ tăng ca hôm nay
+        totalHourToday += hours;
 
         // Mã nhân viên
         const empCode = String(o.emp || "").trim();
@@ -634,6 +638,11 @@ function loadOT() {
       sOtToday.innerText = totalEmpToday;
     }
 
+    // Tổng giờ tăng ca hôm nay
+    const sHourToday = document.getElementById("sHourToday");
+    if (sHourToday) {
+      sHourToday.innerText = Number(totalHourToday.toFixed(2));
+    }
 
     // ==========================================
     // CA 1
