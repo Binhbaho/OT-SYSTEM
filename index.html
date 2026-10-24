@@ -364,11 +364,6 @@ tr:hover{background:#f1f5f9}
     color:#c1121f;
     font-weight:bold;
 }
-.today-ot{
-    background:#fff3cd !important;
-    font-weight:600;
-}
-
 </style>
 </head>
 <body>
@@ -1683,24 +1678,13 @@ function renderMyOT() {
   const keyword = document.getElementById("search").value.toLowerCase();
 
   const tbody = document.getElementById("myTable");
-	const today =
-    new Date().toISOString().split("T")[0];
-
-if(o.date === today){
-    row.classList.add("today-ot");
-}
   tbody.innerHTML = "";
 
   db.collection("overtime")
-  .where("emp", "==", currentUser.code)
-  .get()
-  .then(snapshot => {
-
-      const docs = snapshot.docs.sort((a,b)=>{
-          return b.data().date.localeCompare(a.data().date);
-      });
-
-      docs.forEach(doc => {
+    .where("emp", "==", currentUser.code)
+    .get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
         const o = doc.data();
 
         // lọc theo ngày
