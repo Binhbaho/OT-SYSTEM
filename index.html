@@ -1725,14 +1725,25 @@ if(o.date === today){
 
         // render dòng
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${o.date}</td>
-          <td>${o.shift}</td>
-          <td>${o.start}</td>
-          <td>${o.end}</td>
-          <td>${o.work}</td>
-        `;
-        tbody.appendChild(row);
+
+const today =
+    new Date()
+    .toISOString()
+    .split("T")[0];
+
+if(o.date === today){
+    row.classList.add("today-ot");
+}
+
+row.innerHTML = `
+  <td>${o.date}</td>
+  <td>${o.shift}</td>
+  <td>${o.start}</td>
+  <td>${o.end}</td>
+  <td>${o.work}</td>
+`;
+
+tbody.appendChild(row);
       });
 
       // Nếu không có dữ liệu thì hiển thị thông báo
