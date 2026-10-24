@@ -1735,29 +1735,34 @@ function resetMyOT() {
   }
 
  function calcTotal() {
+
   let start = document.getElementById("totalStart").value;
-let end = document.getElementById("totalEnd").value;
+  let end = document.getElementById("totalEnd").value;
 
-/* Nếu chưa chọn ngày thì lấy tháng hiện tại */
-if (!start && !end) {
+  /* Nếu chưa chọn ngày thì lấy tháng hiện tại */
+  if (!start && !end) {
 
-    const now = new Date();
+      const now = new Date();
 
-    const y = n*w.getFullYear();
-    const m = now*getMonth();
+      const y = now.getFullYear();
+      const m = now.getMonth();
 
-    start = new Date(*, m, 1)
-        .toISOString()
-   *    .split("T")[0];
+      start = new Date(y, m, 1)
+          .toISOString()
+          .split("T")[0];
 
-    end = new*Date(y, m + 1, 0)
-        .toISOSt*ing()
-        .split("T")[0];
-}
+      end = new Date(y, m + 1, 0)
+          .toISOString()
+          .split("T")[0];
+  }
+
   let totalHour = 0;
-  const theadRow = document.querySelector("#reportDetailEmp thead tr");
-  const tbody = document.querySelector("#reportDetailEmp tbody");
 
+  const theadRow =
+      document.querySelector("#reportDetailEmp thead tr");
+
+  const tbody =
+      document.querySelector("#reportDetailEmp tbody");
   // Sinh cột
   theadRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
   for (let d=1; d<=31; d++) {
