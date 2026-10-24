@@ -354,6 +354,16 @@ tr:hover{background:#f1f5f9}
     color: #c1121f;
     font-weight: bold;
 }
+.today-column{
+    background:#fff3cd !important;
+    font-weight:bold;
+}
+
+.sunday-column{
+    background:#fde2e2 !important;
+    color:#c1121f;
+    font-weight:bold;
+}
 </style>
 </head>
 <body>
@@ -2761,12 +2771,46 @@ hours = (e - s) / 1000 / 3600;
     const theadRow = document.querySelector("#reportDetail thead tr");
     const tbody = document.querySelector("#reportDetail tbody");
 
-    theadRow.innerHTML = "<th>Mã NV</th><th>Tên NV</th>";
-    for (let d = 1; d <= 31; d++) {
-      theadRow.innerHTML += `<th>${d}</th>`;
-    }
-    theadRow.innerHTML += "<th>Total</th>";
+    theadRow.innerHTML =
+  "<th>Mã NV</th><th>Tên NV</th>";
 
+const today = new Date();
+
+for (let d = 1; d <= 31; d++) {
+
+    let className = "";
+
+    // xác định tháng đang xem
+    const monthDate = start
+        ? new Date(start)
+        : new Date();
+
+    const checkDate =
+        new Date(
+            monthDate.getFullYear(),
+            monthDate.getMonth(),
+            d
+        );
+
+    // Chủ nhật
+    if (checkDate.getDay() === 0) {
+        className = "sunday-column";
+    }
+
+    // Hôm nay
+    if (
+        d === today.getDate() &&
+        checkDate.getMonth() === today.getMonth() &&
+        checkDate.getFullYear() === today.getFullYear()
+    ) {
+        className = "today-column";
+    }
+
+    theadRow.innerHTML +=
+        `<th class="${className}">${d}</th>`;
+}
+
+theadRow.innerHTML += "<th>Total</th>";
     tbody.innerHTML = "";
     Object.keys(dataMap).forEach(empCode => {
       const row = document.createElement("tr");
@@ -2775,7 +2819,34 @@ hours = (e - s) / 1000 / 3600;
       for (let d = 1; d <= 31; d++) {
         const val = dataMap[empCode].days[d] || "";
         if (val) totalEmpHour += val;
-        html += `<td>${val}</td>`;
+        let className = "";
+
+const monthDate = start
+    ? new Date(start)
+    : new Date();
+
+const checkDate =
+    new Date(
+        monthDate.getFullYear(),
+        monthDate.getMonth(),
+        d
+    );
+
+if (checkDate.getDay() === 0) {
+    className = "sunday-column";
+}
+
+const today = new Date();
+
+if (
+    d === today.getDate() &&
+    checkDate.getMonth() === today.getMonth() &&
+    checkDate.getFullYear() === today.getFullYear()
+) {
+    className = "today-column";
+}
+
+html += `<td class="${className}">${val}</td>`;
       }
       html += `<td><b>${totalEmpHour}</b></td>`;
       row.innerHTML = html;
