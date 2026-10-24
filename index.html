@@ -1671,6 +1671,7 @@ async function createOTNotification({emp, empName, type, title, message, ot}) {
   });
 }
 
+```javascript
 // ================== Lịch tăng ca của nhân viên ==================
 function renderMyOT() {
   const start = document.getElementById("myStart").value;
@@ -1684,30 +1685,35 @@ function renderMyOT() {
     .where("emp", "==", currentUser.code)
     .get()
     .then(snapshot => {
-      snapshot.forEach(doc => {
-        const o = doc.data();
+      // Lấy dữ liệu và sắp xếp ngày mới nhất lên trên
+      const records = [];
 
-        // lọc theo ngày
+      snapshot.forEach(doc => {
+        records.push(doc.data());
+      });
+
+      records.sort((a, b) =>
+        String(b.date || "").localeCompare(String(a.date || ""))
+      );
+
+      records.forEach(o => {
+        // Lọc theo ngày
         if (start && end) {
           if (o.date < start || o.date > end) return;
         } else if (start) {
           if (o.date !== start) return;
         }
 
-        // lọc theo từ khóa
+        // Lọc theo từ khóa
         if (keyword) {
-         const check =
-  String(o.date || "")
-    .toLowerCase()
-    .includes(keyword)
-  ||
-  String(o.work || "")
-    .toLowerCase()
-    .includes(keyword);
+          const check =
+            String(o.date || "").toLowerCase().includes(keyword) ||
+            String(o.work || "").toLowerCase().includes(keyword);
+
           if (!check) return;
         }
 
-        // render dòng
+        // Hiển thị dòng dữ liệu
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${o.date}</td>
@@ -1716,6 +1722,7 @@ function renderMyOT() {
           <td>${o.end}</td>
           <td>${o.work}</td>
         `;
+
         tbody.appendChild(row);
       });
 
@@ -1725,9 +1732,13 @@ function renderMyOT() {
         row.innerHTML = `<td colspan="5">Không có dữ liệu trong khoảng ngày này</td>`;
         tbody.appendChild(row);
       }
+    })
+    .catch(error => {
+      console.error("Lỗi tải lịch tăng ca:", error);
+      tbody.innerHTML =
+        `<tr><td colspan="5">Không thể tải dữ liệu tăng ca</td></tr>`;
     });
 }
-
 
 function resetMyOT() {
 
