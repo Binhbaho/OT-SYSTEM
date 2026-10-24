@@ -1696,11 +1696,7 @@ if(o.date === today){
   .get()
   .then(snapshot => {
 
-      const docs = snapshot.docs.sort((a,b)=>{
-          return b.data().date.localeCompare(a.data().date);
-      });
-
-      docs.forEach(doc => {
+      snapshot.forEach(doc => {
 
         const o = doc.data();
 
