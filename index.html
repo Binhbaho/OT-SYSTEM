@@ -34,11 +34,14 @@
         <a href="#" onclick="showPage('otCleanup')">Dọn dữ liệu OT</a>
         <a href="#" onclick="showPage('report')">Báo cáo</a>
         <a href="#" onclick="showPage('payrollSettings')">Cài đặt ngày công</a>
+        <a href="#" onclick="showPage('otLimits')">Giới hạn tăng ca</a>
+        <a href="#" onclick="showPage('adminAttendance')">Quản lý điểm danh</a>
       </div>
       <div id="empMenu">
   <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
   <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
   <a href="#" onclick="showPage('salaryEstimate')">Dự tính tiền lương tháng này</a>
+  <a href="#" onclick="showPage('myAttendance')">Điểm danh hằng ngày</a>
   <a href="#" onclick="showPage('changePassword')">Đổi mật khẩu</a>
 </div>
       <a href="#" onclick="logout()">Đăng xuất</a>
@@ -130,6 +133,7 @@
               <input id="eCode" placeholder="Mã NV">
               <input id="eName" placeholder="Họ tên">
               <input id="eDept" placeholder="Bộ phận">
+              <select id="eRole"><option value="Công nhân">Công nhân</option><option value="Tổ trưởng">Tổ trưởng</option><option value="Trưởng ca">Trưởng ca</option><option value="Quản lý">Quản lý</option><option value="Khác">Khác</option></select>
               <input id="ePass" placeholder="Mật khẩu">
             </div><br>
             <button onclick="saveEmployee()">Lưu</button>
@@ -139,7 +143,7 @@
 		<div class="employee-list-wrap">
 
             <table>
-              <thead><tr><th>STT</th><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
+              <thead><tr><th>STT</th><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Chức vụ</th><th>Thao tác</th></tr></thead>
               <tbody id="employeeTable"></tbody>
             </table>
           </div>
@@ -230,6 +234,60 @@
         </div>
 
         <!-- Cài đặt ngày công theo tháng (Admin) -->
+        <!-- Cài đặt giới hạn tăng ca theo chức vụ -->
+        <div id="otLimits" class="page hidden">
+          <h2>⏱️ Giới hạn giờ tăng ca theo tháng</h2>
+          <div class="table-wrap">
+            <p class="salary-note">Tổng giờ được cộng từ tăng ca ngày thường, ngày nghỉ và ngày lễ trong tháng. Mức dưới đây là cấu hình quản lý nội bộ, không tự kết luận tính hợp pháp của giờ tăng ca.</p>
+            <div class="salary-grid">
+              <label>Tháng áp dụng<input type="month" id="otLimitMonth" onchange="initOTLimitPage()"></label>
+              <label>Công nhân — giới hạn giờ<input type="number" id="limWorker" min="0" value="40"></label>
+              <label>Công nhân — cảnh báo trước (giờ)<input type="number" id="warnWorker" min="0" value="10"></label>
+              <label>Tổ trưởng — giới hạn giờ<input type="number" id="limLeader" min="0" value="50"></label>
+              <label>Tổ trưởng — cảnh báo trước (giờ)<input type="number" id="warnLeader" min="0" value="10"></label>
+              <label>Trưởng ca — giới hạn giờ<input type="number" id="limShiftLead" min="0" value="60"></label>
+              <label>Trưởng ca — cảnh báo trước (giờ)<input type="number" id="warnShiftLead" min="0" value="20"></label>
+              <label>Quản lý — giới hạn giờ<input type="number" id="limManager" min="0" value="60"></label>
+              <label>Quản lý — cảnh báo trước (giờ)<input type="number" id="warnManager" min="0" value="20"></label>
+              <label>Khác — giới hạn giờ<input type="number" id="limOther" min="0" value="40"></label>
+              <label>Khác — cảnh báo trước (giờ)<input type="number" id="warnOther" min="0" value="10"></label>
+            </div>
+            <button type="button" onclick="saveOTLimitSettings()">Lưu cài đặt giới hạn</button>
+            <span id="otLimitMessage" class="salary-message"></span>
+          </div>
+          <div class="table-wrap">
+            <h3>Theo dõi giờ tăng ca trong tháng</h3>
+            <button type="button" onclick="loadOTLimitReport()">Cập nhật danh sách cảnh báo</button>
+            <div class="list-wrap" style="overflow-x:auto"><table><thead><tr><th>Mã NV</th><th>Họ tên</th><th>Chức vụ</th><th>Tổng giờ OT</th><th>Giới hạn</th><th>Còn lại</th><th>Trạng thái</th></tr></thead><tbody id="otLimitReport"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- Điểm danh nhân viên -->
+        <div id="myAttendance" class="page hidden">
+          <h2>🗓️ Điểm danh hằng ngày</h2>
+          <div class="table-wrap" style="max-width:650px">
+            <label>Ngày điểm danh<input type="date" id="myAttendanceDate"></label>
+            <label>Trạng thái — nhập số giờ làm hoặc mã A, V, B<input id="myAttendanceValue" placeholder="Ví dụ: 8, A, V hoặc B"></label>
+            <p class="salary-note">A = nghỉ phép năm (không trừ lương); V = nghỉ không phép (trừ lương và chuyên cần); B = vắng đặc biệt (không trừ lương). Điểm danh mới sẽ ở trạng thái chờ duyệt.</p>
+            <label>Ghi chú (nếu có)<input id="myAttendanceNote" placeholder="Ghi chú"></label>
+            <button type="button" onclick="submitMyAttendance()">Gửi điểm danh</button>
+            <span id="myAttendanceMessage" class="salary-message"></span>
+          </div>
+          <div class="table-wrap"><h3>Lịch sử điểm danh của tôi</h3><div style="overflow-x:auto"><table><thead><tr><th>Ngày</th><th>Trạng thái</th><th>Giờ</th><th>Duyệt</th><th>Ghi chú</th></tr></thead><tbody id="myAttendanceHistory"></tbody></table></div></div>
+        </div>
+
+        <!-- Admin xem, chỉnh sửa và duyệt điểm danh -->
+        <div id="adminAttendance" class="page hidden">
+          <h2>📋 Quản lý điểm danh</h2>
+          <div class="table-wrap">
+            <label>Ngày xem / nhập điểm danh<input type="date" id="adminAttendanceDate"></label>
+            <button type="button" onclick="loadAdminAttendance()">Tải danh sách</button>
+            <button type="button" onclick="saveAdminAttendanceAll()">Lưu thay đổi</button>
+            <p class="salary-note">Nhập số giờ làm hoặc A/V/B. A dùng phép năm; V không phép; B vắng đặc biệt. Chỉ dữ liệu đã duyệt mới được xem là xác nhận.</p>
+            <div style="overflow-x:auto"><table><thead><tr><th>Mã NV</th><th>Họ tên</th><th>Bộ phận</th><th>Chức vụ</th><th>Giờ / mã</th><th>Ghi chú</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="adminAttendanceTable"></tbody></table></div>
+          </div>
+        </div>
+
         <div id="payrollSettings" class="page hidden">
           <h2>📅 Cài đặt ngày công theo tháng</h2>
           <div class="table-wrap" style="max-width:700px;">

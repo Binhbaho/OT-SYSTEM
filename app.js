@@ -192,6 +192,7 @@ async function saveEmployee(){
     code: document.getElementById("eCode").value.trim().toUpperCase(),
     name: document.getElementById("eName").value.trim(),
     dept: document.getElementById("eDept").value.trim(),
+    role: document.getElementById("eRole").value || "Công nhân",
     password: document.getElementById("ePass").value.trim()
   };
 
@@ -229,6 +230,7 @@ function clearEmployeeForm(){
   document.getElementById("eCode").value="";
   document.getElementById("eName").value="";
   document.getElementById("eDept").value="";
+  document.getElementById("eRole").value="Công nhân";
   document.getElementById("ePass").value="";
   editingEmployeeId = null;
 }
@@ -240,6 +242,7 @@ function editEmployee(id){
       document.getElementById("eCode").value = e.code || "";
       document.getElementById("eName").value = e.name || "";
       document.getElementById("eDept").value = e.dept || "";
+      document.getElementById("eRole").value = e.role || "Công nhân";
       document.getElementById("ePass").value = e.password || "";
       editingEmployeeId = id;
       showPage("employees");
@@ -373,7 +376,7 @@ async function replaceAllEmployees(){
       const key=code.toUpperCase();
       if(!code||!name||!dept||!password){ errors.push("Dòng " + (i+1) + ": thiếu thông tin"); continue; }
       if(seen.has(key)){ errors.push("Dòng " + (i+1) + ": mã NV " + code + " bị trùng trong file"); continue; }
-      seen.add(key); newEmployees.push({code,name,dept,password});
+      seen.add(key); newEmployees.push({code,name,dept,password,role:"Công nhân"});
     }
     if(errors.length){ alert("❌ Không thể thay thế danh sách.\n\n" + errors.join("\n")); return; }
     const currentSnap=await db.collection("employees").get();
@@ -1346,7 +1349,7 @@ document
         const allEmployees=await db.collection("employees").get();
         const existing=allEmployees.docs.some(doc => String(doc.data().code || "").trim().toUpperCase() === code);
         if(existing){ duplicate++; errorList.push("Dòng " + (i+1) + ": mã NV " + code + " đã tồn tại trên hệ thống"); continue; }
-        await db.collection("employees").add({code,name,dept,password}); success++;
+        await db.collection("employees").add({code,name,dept,password,role:"Công nhân"}); success++;
       }
       let message="📥 KẾT QUẢ IMPORT NHÂN VIÊN\n\n✅ Thành công: " + success + "\n⚠️ Trùng mã NV: " + duplicate + "\n❌ Lỗi: " + error;
       if(errorList.length) message += "\n\nChi tiết:\n" + errorList.join("\n");
@@ -1965,7 +1968,8 @@ async function saveOT() {
   <td>${stt++}</td>
   <td>${e.code}</td>
   <td>${e.name}</td>
-  <td>${e.dept}</td>
+  <td>${e.dept || ""}</td>
+  <td>${e.role || "Công nhân"}</td>
   <td>
     <button
       class="btn-edit"
@@ -2175,6 +2179,88 @@ function formatDate(date){
 
     return `${y}-${m}-${d}`;
 }
+// ================== GIỚI HẠN OT THEO THÁNG ==================
+const OT_ROLE_DEFAULTS = {
+  "Công nhân": {limit:40, warning:10},
+  "Tổ trưởng": {limit:50, warning:10},
+  "Trưởng ca": {limit:60, warning:20},
+  "Quản lý": {limit:60, warning:20},
+  "Khác": {limit:40, warning:10}
+};
+function monthKeyNow(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
+function monthDateRange(month){ const [y,m]=month.split("-").map(Number); return {start:`${month}-01`,end:`${month}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`}; }
+function getOTLimitForm(){
+  return {roles:{
+    "Công nhân":{limit:Number(document.getElementById("limWorker").value)||0,warning:Number(document.getElementById("warnWorker").value)||0},
+    "Tổ trưởng":{limit:Number(document.getElementById("limLeader").value)||0,warning:Number(document.getElementById("warnLeader").value)||0},
+    "Trưởng ca":{limit:Number(document.getElementById("limShiftLead").value)||0,warning:Number(document.getElementById("warnShiftLead").value)||0},
+    "Quản lý":{limit:Number(document.getElementById("limManager").value)||0,warning:Number(document.getElementById("warnManager").value)||0},
+    "Khác":{limit:Number(document.getElementById("limOther").value)||0,warning:Number(document.getElementById("warnOther").value)||0}
+  }};
+}
+function fillOTLimitForm(settings={}){
+ const r={...OT_ROLE_DEFAULTS,...(settings.roles||{})};
+ const map={"Công nhân":["limWorker","warnWorker"],"Tổ trưởng":["limLeader","warnLeader"],"Trưởng ca":["limShiftLead","warnShiftLead"],"Quản lý":["limManager","warnManager"],"Khác":["limOther","warnOther"]};
+ Object.entries(map).forEach(([role,ids])=>{document.getElementById(ids[0]).value=r[role].limit;document.getElementById(ids[1]).value=r[role].warning;});
+}
+async function initOTLimitPage(){
+ const m=document.getElementById("otLimitMonth"); if(!m.value)m.value=monthKeyNow();
+ try{const snap=await db.collection("otLimitSettings").doc(m.value).get();fillOTLimitForm(snap.exists?snap.data():{});await loadOTLimitReport();}catch(e){console.error(e);document.getElementById("otLimitMessage").textContent="Không tải được cài đặt: "+e.message;}
+}
+async function saveOTLimitSettings(){
+ if(!currentUser||currentUser.role!=="admin")return alert("Chỉ Admin được thay đổi giới hạn.");
+ const month=document.getElementById("otLimitMonth").value;if(!month)return alert("Vui lòng chọn tháng.");
+ try{await db.collection("otLimitSettings").doc(month).set({...getOTLimitForm(),month,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});document.getElementById("otLimitMessage").textContent="Đã lưu cài đặt cho tháng "+month;await loadOTLimitReport();}
+ catch(e){alert("Không lưu được cài đặt: "+e.message);}
+}
+async function loadOTLimitReport(){
+ if(!currentUser||currentUser.role!=="admin")return;
+ const month=document.getElementById("otLimitMonth").value||monthKeyNow(),range=monthDateRange(month),tbody=document.getElementById("otLimitReport");tbody.innerHTML="<tr><td colspan='7'>Đang tải...</td></tr>";
+ try{
+  const [empSnap,otSnap,settingSnap]=await Promise.all([db.collection("employees").get(),db.collection("overtime").get(),db.collection("otLimitSettings").doc(month).get()]);
+  const settings=settingSnap.exists?settingSnap.data():{};const roles={...OT_ROLE_DEFAULTS,...(settings.roles||{})};const totals={};
+  otSnap.forEach(doc=>{const o=doc.data();if(String(o.date||"").slice(0,7)!==month)return;const code=String(o.emp||"").trim().toUpperCase();let hours=0;if(o.start&&o.end){let s=new Date("1970-01-01T"+o.start+":00"),e=new Date("1970-01-01T"+o.end+":00");if(e<s)e.setHours(e.getHours()+24);hours=(e-s)/3600000;}else hours=Number(o.hours)||0;totals[code]=(totals[code]||0)+hours;});
+  const employees=empSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.code||"").localeCompare(String(b.code||"")));
+  tbody.innerHTML=employees.map(e=>{const role=e.role||"Công nhân",cfg=roles[role]||roles["Khác"],hours=totals[String(e.code||"").trim().toUpperCase()]||0,remaining=cfg.limit-hours;let status="Bình thường";if(hours>=cfg.limit)status="⚠️ Đã chạm/vượt giới hạn";else if(remaining<=cfg.warning)status="🟠 Sắp chạm giới hạn";return `<tr><td>${escapeHTML(e.code)}</td><td>${escapeHTML(e.name)}</td><td>${escapeHTML(role)}</td><td>${hours.toFixed(2)}</td><td>${cfg.limit}</td><td>${remaining.toFixed(2)}</td><td>${status}</td></tr>`;}).join("")||"<tr><td colspan='7'>Chưa có nhân viên</td></tr>";
+ }catch(e){console.error(e);tbody.innerHTML=`<tr><td colspan='7'>Lỗi tải dữ liệu: ${escapeHTML(e.message)}</td></tr>`;}
+}
+function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+
+// ================== ĐIỂM DANH HẰNG NGÀY ==================
+function normalizeAttendanceInput(raw){const v=String(raw||"").trim().toUpperCase();if(["A","V","B"].includes(v))return {code:v,hours:0};if(v!==""&&Number.isFinite(Number(v))&&Number(v)>=0&&Number(v)<=24)return {code:"WORK",hours:Number(v)};return null;}
+function attendanceDateToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+async function submitMyAttendance(){
+ if(!currentUser||currentUser.role!=="emp")return alert("Chỉ nhân viên mới sử dụng mục này.");
+ const date=document.getElementById("myAttendanceDate").value,value=normalizeAttendanceInput(document.getElementById("myAttendanceValue").value),note=document.getElementById("myAttendanceNote").value.trim();
+ if(!date||!value)return alert("Vui lòng chọn ngày và nhập số giờ hoặc A, V, B.");
+ const ref=db.collection("attendance").doc(`${currentUser.code}_${date}`);
+ try{const old=await ref.get();if(old.exists&&old.data().status==="approved")return alert("Điểm danh ngày này đã được duyệt. Vui lòng liên hệ Admin nếu cần sửa.");
+ await ref.set({emp:currentUser.code,empName:currentUser.name,date,attendanceCode:value.code,hours:value.hours,note,status:"pending",submittedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.code},{merge:true});
+ document.getElementById("myAttendanceMessage").textContent="Đã gửi điểm danh, đang chờ Admin duyệt.";await loadMyAttendanceHistory();
+ }catch(e){alert("Không gửi được điểm danh: "+e.message);}
+}
+async function loadMyAttendanceHistory(){
+ if(!currentUser||currentUser.role!=="emp")return;const tbody=document.getElementById("myAttendanceHistory");
+ try{const snap=await db.collection("attendance").where("emp","==",currentUser.code).get();const rows=snap.docs.map(d=>d.data()).sort((a,b)=>String(b.date).localeCompare(String(a.date)));tbody.innerHTML=rows.map(a=>`<tr><td>${escapeHTML(a.date)}</td><td>${a.attendanceCode==="WORK"?"Có đi làm":escapeHTML(a.attendanceCode)}</td><td>${Number(a.hours)||0}</td><td>${a.status==="approved"?"Đã duyệt":"Chờ duyệt"}</td><td>${escapeHTML(a.note||"")}</td></tr>`).join("")||"<tr><td colspan='5'>Chưa có dữ liệu</td></tr>";}
+ catch(e){tbody.innerHTML=`<tr><td colspan='5'>Không tải được dữ liệu: ${escapeHTML(e.message)}</td></tr>`;}
+}
+async function loadAdminAttendance(){
+ if(!currentUser||currentUser.role!=="admin")return;const date=document.getElementById("adminAttendanceDate").value||attendanceDateToday(),tbody=document.getElementById("adminAttendanceTable");tbody.innerHTML="<tr><td colspan='8'>Đang tải...</td></tr>";
+ try{const [empSnap,attSnap]=await Promise.all([db.collection("employees").orderBy("code","asc").get(),db.collection("attendance").where("date","==",date).get()]);const at={};attSnap.forEach(d=>at[String(d.data().emp||"").toUpperCase()]= {id:d.id,...d.data()});
+ tbody.innerHTML=empSnap.docs.map(d=>{const e=d.data(),a=at[String(e.code||"").toUpperCase()]||{};const val=a.attendanceCode==="WORK"?(a.hours??""):(a.attendanceCode||"");return `<tr data-code="${escapeHTML(e.code)}" data-docid="${escapeHTML(a.id||`${e.code}_${date}`)}"><td>${escapeHTML(e.code)}</td><td>${escapeHTML(e.name)}</td><td>${escapeHTML(e.dept||"")}</td><td>${escapeHTML(e.role||"Công nhân")}</td><td><input class="att-value" value="${escapeHTML(val)}" placeholder="Giờ / A / V / B" style="min-width:100px"></td><td><input class="att-note" value="${escapeHTML(a.note||"")}" placeholder="Ghi chú"></td><td>${a.status==="approved"?"Đã duyệt":a.status==="pending"?"Chờ duyệt":"Chưa nhập"}</td><td><button type="button" onclick="approveAttendanceRow(this)">Duyệt</button></td></tr>`;}).join("")||"<tr><td colspan='8'>Không có nhân viên</td></tr>";
+ }catch(e){tbody.innerHTML=`<tr><td colspan='8'>Lỗi tải dữ liệu: ${escapeHTML(e.message)}</td></tr>`;}
+}
+async function saveAdminAttendanceAll(){
+ if(!currentUser||currentUser.role!=="admin")return alert("Chỉ Admin được chỉnh sửa.");const date=document.getElementById("adminAttendanceDate").value||attendanceDateToday();const rows=[...document.querySelectorAll("#adminAttendanceTable tr[data-code]")];
+ try{let batch=db.batch(),count=0;for(const row of rows){const code=row.dataset.code,parsed=normalizeAttendanceInput(row.querySelector(".att-value").value);if(!parsed)continue;const ref=db.collection("attendance").doc(row.dataset.docid||`${code}_${date}`);batch.set(ref,{emp:code,date,attendanceCode:parsed.code,hours:parsed.hours,note:row.querySelector(".att-note").value.trim(),status:"pending",updatedBy:currentUser.name||"Admin",updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});count++;if(count%400===0){await batch.commit();batch=db.batch();}}
+ if(count%400!==0)await batch.commit();alert("Đã lưu điểm danh của "+count+" nhân viên. Các dòng cần được duyệt để xác nhận.");await loadAdminAttendance();
+ }catch(e){alert("Không lưu được điểm danh: "+e.message);}
+}
+async function approveAttendanceRow(button){
+ if(!currentUser||currentUser.role!=="admin")return;const row=button.closest("tr"),code=row.dataset.code,date=document.getElementById("adminAttendanceDate").value||attendanceDateToday(),parsed=normalizeAttendanceInput(row.querySelector(".att-value").value);if(!parsed)return alert("Nhập số giờ hợp lệ hoặc A, V, B.");
+ try{await db.collection("attendance").doc(row.dataset.docid||`${code}_${date}`).set({emp:code,date,attendanceCode:parsed.code,hours:parsed.hours,note:row.querySelector(".att-note").value.trim(),status:"approved",approvedBy:currentUser.name||"Admin",approvedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.name||"Admin"},{merge:true});await loadAdminAttendance();}catch(e){alert("Không duyệt được: "+e.message);}
+}
+
 // Chỉnh showPage để gọi renderTotalOT khi mở trang nhân viên
 function showPage(id){
     document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
@@ -2197,6 +2283,10 @@ function showPage(id){
     if (id === "payrollSettings" && currentUser && currentUser.role === "admin") {
         initPayrollSettingsPage();
     }
+
+    if (id === "otLimits" && currentUser && currentUser.role === "admin") initOTLimitPage();
+    if (id === "adminAttendance" && currentUser && currentUser.role === "admin") { if(!document.getElementById("adminAttendanceDate").value)document.getElementById("adminAttendanceDate").value=attendanceDateToday(); loadAdminAttendance(); }
+    if (id === "myAttendance" && currentUser && currentUser.role === "emp") { if(!document.getElementById("myAttendanceDate").value)document.getElementById("myAttendanceDate").value=attendanceDateToday(); loadMyAttendanceHistory(); }
 }
 
 // ============================================================

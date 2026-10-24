@@ -371,3 +371,10 @@ tr:hover{background:#f1f5f9}
   .salary-message{display:block;margin:10px 0 0}
   #salaryEstimate .salary-result-cards{flex-direction:column}
 }
+
+/* OT limit and attendance pages */
+.salary-note{color:#64748b;font-size:13px;line-height:1.55;margin:10px 0}
+#otLimitReport tr td:last-child{font-weight:600}
+#adminAttendanceTable input{min-width:90px}
+#adminAttendanceTable button{padding:7px 10px}
+@media(max-width:768px){#adminAttendanceTable input{min-width:85px}.salary-grid{grid-template-columns:1fr!important}}
