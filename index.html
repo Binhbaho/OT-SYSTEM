@@ -205,6 +205,30 @@ tr:hover{background:#f1f5f9}
 .btn-edit:hover {
     background: #0b5ed7;
 }
+	.file-toolbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+@media(max-width:768px){
+
+  .file-toolbar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .file-toolbar input[type="file"]{
+    width:100%;
+  }
+
+  .file-toolbar button{
+    width:100%;
+  }
+
+}
 
 /* Nút Xóa */
 .btn-delete {
@@ -370,7 +394,7 @@ tr:hover{background:#f1f5f9}
         <!-- Employees -->
         <div id="employees" class="page hidden">
           <h2>Quản lý nhân viên (<span id="totalEmployees"></span> nhân viên)</h2>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+          <div class="file-toolbar">
   <input type="file" id="fileEmployees" accept=".csv" style="flex:1; margin:0;">
   <button type="button" onclick="downloadEmployeeTemplate()">📥 Tải mẫu nhân viên</button>
   <button type="button" onclick="downloadEmployeeList()">📤 Tải danh sách hiện tại</button>
