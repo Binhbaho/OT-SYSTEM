@@ -464,7 +464,6 @@ function loadOT() {
     // ==========================================
 
     let totalHour = 0;
-    let totalHourToday = 0;
 
     // Nhân viên tăng ca hôm nay
     const empTodaySet = new Set();
@@ -541,9 +540,6 @@ function loadOT() {
 
       if (o.date && isToday(o.date.trim())) {
 
-        // Tổng giờ tăng ca hôm nay
-        totalHourToday += hours;
-
         // Mã nhân viên
         const empCode = String(o.emp || "").trim();
 
@@ -604,6 +600,7 @@ function loadOT() {
           <td>${o.start || ""}</td>
           <td>${o.end || ""}</td>
           <td>${o.work || ""}</td>
+          <td>${({weekday:"Ngày thường",restday:"Ngày nghỉ",holiday:"Ngày lễ"})[o.otType || "weekday"] || "Ngày thường"}</td>
 
           <td>
             <button
@@ -638,11 +635,6 @@ function loadOT() {
       sOtToday.innerText = totalEmpToday;
     }
 
-    // Tổng giờ tăng ca hôm nay
-    const sHourToday = document.getElementById("sHourToday");
-    if (sHourToday) {
-      sHourToday.innerText = Number(totalHourToday.toFixed(2));
-    }
 
     // ==========================================
     // CA 1
@@ -739,6 +731,7 @@ function editOT(id) {
       document.getElementById("otStart").value = o.start;
       document.getElementById("otEnd").value = o.end;
       document.getElementById("otShift").value = o.shift;
+      document.getElementById("otType").value = o.otType || "weekday";
       document.getElementById("otWork").value = o.work;
       // Bạn có thể lưu id để khi bấm Lưu thì update thay vì thêm mới
       window.currentEditId = id;
@@ -1664,6 +1657,7 @@ document
           date: date,
           start: start,
           end: end,
+          otType: "weekday",
           work: work
         };
 
@@ -1780,6 +1774,9 @@ async function saveOT() {
   const shift =
     document.getElementById("otShift").value;
 
+  const otType =
+    document.getElementById("otType").value || "weekday";
+
   const work =
     document.getElementById("otWork").value.trim();
 
@@ -1871,6 +1868,7 @@ async function saveOT() {
       start: start,
       end: end,
       shift: shift,
+      otType: otType,
       work: work
     };
 
@@ -1914,6 +1912,7 @@ async function saveOT() {
     document.getElementById("otEnd").value = "";
 
     document.getElementById("otShift").value = "1";
+    document.getElementById("otType").value = "weekday";
 
     document.getElementById("otWork").value = "";
     window.currentEditId = null;
@@ -2178,53 +2177,332 @@ function formatDate(date){
 }
 // Chỉnh showPage để gọi renderTotalOT khi mở trang nhân viên
 function showPage(id){
+    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+    const page = document.getElementById(id);
+    if (page) page.classList.remove("hidden");
 
-    document
-      .querySelectorAll(".page")
-      .forEach(p => p.classList.add("hidden"));
-
-    document
-      .getElementById(id)
-      .classList.remove("hidden");
-
-    if(
-        id === "totalOvertime" &&
-        currentUser &&
-        currentUser.role === "emp"
-    ){
-
-        if(
-            !document.getElementById("totalStart").value &&
-            !document.getElementById("totalEnd").value
-        ){
-
+    if (id === "totalOvertime" && currentUser && currentUser.role === "emp") {
+        if (!document.getElementById("totalStart").value && !document.getElementById("totalEnd").value) {
             const now = new Date();
-
-            const firstDay =
-                formatDate(
-                    new Date(
-                        now.getFullYear(),
-                        now.getMonth(),
-                        1
-                    )
-                );
-
-            const lastDay =
-                formatDate(
-                    new Date(
-                        now.getFullYear(),
-                        now.getMonth()+1,
-                        0
-                    )
-                );
-
-            document.getElementById("totalStart").value =
-                firstDay;
-
-            document.getElementById("totalEnd").value =
-                lastDay;
+            document.getElementById("totalStart").value = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+            document.getElementById("totalEnd").value = formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
         }
-
         calcTotal();
     }
+
+    if (id === "salaryEstimate" && currentUser && currentUser.role === "emp") {
+        loadSalaryEstimatePage();
+    }
+
+    if (id === "payrollSettings" && currentUser && currentUser.role === "admin") {
+        initPayrollSettingsPage();
+    }
 }
+
+// ============================================================
+// DỰ TÍNH LƯƠNG NHÂN VIÊN
+// Collections:
+// salaryProfiles/{employeeCode} - hồ sơ lương/phụ cấp dùng lại
+// salaryEstimates/{employeeCode_YYYY-MM} - dữ liệu dự tính theo tháng
+// payrollSettings/{YYYY-MM} - số ngày công do admin thiết lập
+// ============================================================
+const salaryAllowanceFields = [
+  ["spAttendance", "attendanceAllowance", "Trợ cấp chuyên cần"],
+  ["spHousing", "housingAllowance", "Trợ cấp nhà ở"],
+  ["spWorker", "workerAllowance", "Trợ cấp công nhân"],
+  ["spJapanese", "japaneseAllowance", "Trợ cấp tiếng Nhật"],
+  ["spTransport", "transportAllowance", "Trợ cấp đi lại"],
+  ["spRotating", "rotatingAllowance", "Trợ cấp nhóm luân phiên"],
+  ["spCompanyTransport", "companyTransportAllowance", "Trợ cấp đi trực công ty"],
+  ["spKltManagement", "kltManagementAllowance", "Quản lý KLT / trợ cấp khác cố định"]
+];
+let salaryProfileLoaded = false;
+let registeredSalaryOT = { weekday: 0, restday: 0, holiday: 0, night: 0 };
+let currentPayrollSetting = null;
+
+function currentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+}
+function salaryEstimateDocId() {
+  return `${currentUser.code}_${document.getElementById("salaryMonth").value || currentMonthKey()}`;
+}
+function salaryNumber(id) {
+  const el = document.getElementById(id);
+  const value = el ? Number(el.value) : 0;
+  return Number.isFinite(value) ? value : 0;
+}
+function moneyVND(value) {
+  return Math.round(Number(value) || 0).toLocaleString("vi-VN") + " đ";
+}
+function setInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value === undefined || value === null ? "" : value;
+}
+function getMonthBounds(monthKey) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return { start: `${monthKey}-01`, end: formatDate(new Date(year, month, 0)), year, month };
+}
+function getDurationHours(start, end) {
+  if (!start || !end) return 0;
+  const toMin = t => {
+    const parts = t.split(":").map(Number);
+    return parts[0] * 60 + parts[1];
+  };
+  const s = toMin(start);
+  let e = toMin(end);
+  if (e <= s) e += 1440;
+  return Math.max(0, (e - s) / 60);
+}
+function getNightHours(start, end) {
+  if (!start || !end) return 0;
+  const toMin = t => {
+    const parts = t.split(":").map(Number);
+    return parts[0] * 60 + parts[1];
+  };
+  const s = toMin(start);
+  let e = toMin(end);
+  if (e <= s) e += 1440;
+  const windows = [[0,360],[1080,1440],[1440,1800]];
+  let overlap = 0;
+  windows.forEach(([a,b]) => overlap += Math.max(0, Math.min(e,b) - Math.max(s,a)));
+  return overlap / 60;
+}
+function getSalaryProfileFromForm() {
+  const profile = {
+    emp: currentUser.code,
+    empName: currentUser.name || "",
+    salaryBase: salaryNumber("spSalaryBase"),
+    hourlyRate: salaryNumber("spHourlyRate"),
+    kltFee: salaryNumber("spKltFee"),
+    insurance: salaryNumber("spInsurance"),
+    unionFee: salaryNumber("spUnionFee"),
+    carryoverLeave: Math.min(5, Math.max(0, salaryNumber("spCarryoverLeave"))),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  salaryAllowanceFields.forEach(([id,key]) => profile[key] = salaryNumber(id));
+  return profile;
+}
+function fillSalaryProfile(profile = {}) {
+  setInputValue("spSalaryBase", profile.salaryBase || 0);
+  setInputValue("spHourlyRate", profile.hourlyRate || 0);
+  setInputValue("spKltFee", profile.kltFee || 0);
+  setInputValue("spInsurance", profile.insurance || 0);
+  setInputValue("spUnionFee", profile.unionFee || 0);
+  setInputValue("spCarryoverLeave", Math.min(5, Number(profile.carryoverLeave || 0)));
+  salaryAllowanceFields.forEach(([id,key]) => setInputValue(id, profile[key] || 0));
+}
+async function saveSalaryProfile() {
+  if (!currentUser || currentUser.role !== "emp") return alert("Chỉ tài khoản nhân viên mới sử dụng được chức năng này.");
+  const profile = getSalaryProfileFromForm();
+  if (profile.salaryBase < 0 || profile.hourlyRate < 0) return alert("Lương và giá trị/giờ không được âm.");
+  try {
+    await db.collection("salaryProfiles").doc(currentUser.code).set(profile, { merge: true });
+    document.getElementById("salaryProfileMessage").innerText = "Đã lưu hồ sơ lương.";
+    salaryProfileLoaded = true;
+    await calculateSalaryEstimate();
+  } catch (err) {
+    console.error(err);
+    alert("Không thể lưu hồ sơ lương: " + err.message);
+  }
+}
+function getMonthlyInputsFromForm() {
+  return {
+    emp: currentUser.code,
+    empName: currentUser.name || "",
+    monthKey: document.getElementById("salaryMonth").value || currentMonthKey(),
+    absenceHours: Math.max(0, salaryNumber("seAbsenceHours")),
+    annualLeaveDaysUsed: Math.max(0, salaryNumber("seLeaveDays")),
+    weekdayAdjust: salaryNumber("seWeekdayAdjust"),
+    restdayAdjust: salaryNumber("seRestdayAdjust"),
+    holidayAdjust: salaryNumber("seHolidayAdjust"),
+    nightAdjust: salaryNumber("seNightAdjust"),
+    otherIncome: Math.max(0, salaryNumber("seOtherIncome")),
+    otherIncomeReason: document.getElementById("seOtherIncomeReason").value.trim(),
+    otherDeduction: Math.max(0, salaryNumber("seOtherDeduction")),
+    otherDeductionReason: document.getElementById("seOtherDeductionReason").value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+async function saveMonthlySalaryInputs(silent = false) {
+  if (!currentUser || currentUser.role !== "emp") return;
+  const inputs = getMonthlyInputsFromForm();
+  if (!inputs.monthKey) return alert("Vui lòng chọn tháng dự tính.");
+  try {
+    await db.collection("salaryEstimates").doc(`${currentUser.code}_${inputs.monthKey}`).set(inputs, { merge: true });
+    if (!silent) document.getElementById("salaryEstimateMessage").innerText = "Đã lưu dữ liệu dự tính tháng.";
+    return true;
+  } catch (err) {
+    console.error(err);
+    if (!silent) alert("Không thể lưu dữ liệu dự tính: " + err.message);
+    return false;
+  }
+}
+async function loadSalaryEstimatePage() {
+  if (!currentUser || currentUser.role !== "emp") return;
+  const monthInput = document.getElementById("salaryMonth");
+  if (!monthInput.value) monthInput.value = currentMonthKey();
+  const monthKey = monthInput.value;
+  if (!/^\d{4}-\d{2}$/.test(monthKey)) return;
+  document.getElementById("salaryProfileMessage").innerText = "";
+  document.getElementById("salaryEstimateMessage").innerText = "";
+  try {
+    const [profileSnap, estimateSnap, settingSnap, otSnap, allEstimateSnap] = await Promise.all([
+      db.collection("salaryProfiles").doc(currentUser.code).get(),
+      db.collection("salaryEstimates").doc(`${currentUser.code}_${monthKey}`).get(),
+      db.collection("payrollSettings").doc(monthKey).get(),
+      db.collection("overtime").where("emp", "==", currentUser.code).get(),
+      db.collection("salaryEstimates").where("emp", "==", currentUser.code).get()
+    ]);
+    const profile = profileSnap.exists ? profileSnap.data() : {};
+    fillSalaryProfile(profile);
+    salaryProfileLoaded = profileSnap.exists;
+    const estimate = estimateSnap.exists ? estimateSnap.data() : {};
+    setInputValue("seAbsenceHours", estimate.absenceHours || 0);
+    setInputValue("seLeaveDays", estimate.annualLeaveDaysUsed || 0);
+    setInputValue("seWeekdayAdjust", estimate.weekdayAdjust || 0);
+    setInputValue("seRestdayAdjust", estimate.restdayAdjust || 0);
+    setInputValue("seHolidayAdjust", estimate.holidayAdjust || 0);
+    setInputValue("seNightAdjust", estimate.nightAdjust || 0);
+    setInputValue("seOtherIncome", estimate.otherIncome || 0);
+    setInputValue("seOtherIncomeReason", estimate.otherIncomeReason || "");
+    setInputValue("seOtherDeduction", estimate.otherDeduction || 0);
+    setInputValue("seOtherDeductionReason", estimate.otherDeductionReason || "");
+    currentPayrollSetting = settingSnap.exists ? settingSnap.data() : null;
+    document.getElementById("salaryWorkDaysInfo").innerText = currentPayrollSetting && currentPayrollSetting.workDays !== undefined
+      ? `Ngày công theo lịch công ty trong ${monthKey}: ${currentPayrollSetting.workDays} ngày.`
+      : `Admin chưa thiết lập tổng ngày công cho tháng ${monthKey}.`;
+
+    registeredSalaryOT = { weekday: 0, restday: 0, holiday: 0, night: 0 };
+    const bounds = getMonthBounds(monthKey);
+    otSnap.forEach(doc => {
+      const o = doc.data();
+      if (!o.date || o.date < bounds.start || o.date > bounds.end) return;
+      const hours = getDurationHours(o.start, o.end);
+      const type = ["weekday","restday","holiday"].includes(o.otType) ? o.otType : "weekday";
+      registeredSalaryOT[type] += hours;
+      registeredSalaryOT.night += getNightHours(o.start, o.end);
+    });
+    setInputValue("seWeekdayRegistered", registeredSalaryOT.weekday.toFixed(2));
+    setInputValue("seRestdayRegistered", registeredSalaryOT.restday.toFixed(2));
+    setInputValue("seHolidayRegistered", registeredSalaryOT.holiday.toFixed(2));
+    setInputValue("seNightRegistered", registeredSalaryOT.night.toFixed(2));
+
+    const [year, month] = monthKey.split("-").map(Number);
+    let usedLeave = 0;
+    allEstimateSnap.forEach(doc => {
+      const d = doc.data();
+      if (d.monthKey && d.monthKey.startsWith(`${year}-`) && d.monthKey <= monthKey) usedLeave += Number(d.annualLeaveDaysUsed || 0);
+    });
+    const monthsAccrued = month;
+    const carry = Math.min(5, Math.max(0, Number(profile.carryoverLeave || 0)));
+    const leaveBalance = Math.max(0, carry + monthsAccrued - usedLeave);
+    document.getElementById("salaryLeaveInfo").innerText = `Phép năm dự tính: chuyển từ năm trước ${carry} ngày + phát sinh năm nay ${monthsAccrued} ngày − đã đăng ký đến tháng này ${usedLeave} ngày = còn ${leaveBalance} ngày. Kiểm tra với số phép đã được công ty xác nhận.`;
+    await calculateSalaryEstimate(false);
+  } catch (err) {
+    console.error(err);
+    alert("Không tải được dữ liệu dự tính lương: " + err.message);
+  }
+}
+async function calculateSalaryEstimate(saveInputs = false) {
+  if (!currentUser || currentUser.role !== "emp") return;
+  if (saveInputs) {
+    const saved = await saveMonthlySalaryInputs(true);
+    if (!saved) return;
+  }
+  const profile = getSalaryProfileFromForm();
+  const absenceHours = Math.max(0, salaryNumber("seAbsenceHours"));
+  const absenceDeduction = absenceHours * profile.hourlyRate;
+  const attendanceAllowance = absenceHours > 0 ? 0 : profile.attendanceAllowance;
+  const fixedAllowances = profile.housingAllowance + profile.workerAllowance + profile.japaneseAllowance + profile.transportAllowance + profile.rotatingAllowance + profile.companyTransportAllowance + profile.kltManagementAllowance;
+  const otherIncome = Math.max(0, salaryNumber("seOtherIncome"));
+  const otherDeduction = Math.max(0, salaryNumber("seOtherDeduction"));
+  const weekdayHours = Math.max(0, registeredSalaryOT.weekday + salaryNumber("seWeekdayAdjust"));
+  const restdayHours = Math.max(0, registeredSalaryOT.restday + salaryNumber("seRestdayAdjust"));
+  const holidayHours = Math.max(0, registeredSalaryOT.holiday + salaryNumber("seHolidayAdjust"));
+  const nightHours = Math.max(0, registeredSalaryOT.night + salaryNumber("seNightAdjust"));
+  const weekdayPay = weekdayHours * profile.hourlyRate * 1.5;
+  const restdayPay = restdayHours * profile.hourlyRate * 2;
+  const holidayPay = holidayHours * profile.hourlyRate * 3;
+  // Tạm dùng phụ trội ca đêm 30% theo thông tin người dùng; cần đối chiếu quy chế công ty.
+  const nightPay = nightHours * profile.hourlyRate * 0.30;
+  const allowanceTotal = attendanceAllowance + fixedAllowances;
+  const baseAfterAbsence = profile.salaryBase - absenceDeduction;
+  const gross = baseAfterAbsence + allowanceTotal + weekdayPay + restdayPay + holidayPay + nightPay + otherIncome;
+  const deductions = profile.insurance + profile.unionFee + profile.kltFee + otherDeduction;
+  const net = gross - deductions;
+  document.getElementById("seGrossResult").innerText = moneyVND(gross);
+  document.getElementById("seDeductionResult").innerText = moneyVND(deductions);
+  document.getElementById("seNetResult").innerText = moneyVND(net);
+  const rows = [
+    ["Lương cơ bản + phụ cấp lương", "—", "—", profile.salaryBase],
+    ["Trừ vắng mặt không hưởng lương", `${absenceHours} giờ`, `${moneyVND(profile.hourlyRate)}/giờ`, -absenceDeduction],
+    ["Trợ cấp chuyên cần", absenceHours > 0 ? "Không đạt" : "Đủ điều kiện", "—", attendanceAllowance],
+    ["Trợ cấp nhà ở", "—", "—", profile.housingAllowance],
+    ["Trợ cấp công nhân", "—", "—", profile.workerAllowance],
+    ["Trợ cấp tiếng Nhật", "—", "—", profile.japaneseAllowance],
+    ["Trợ cấp đi lại", "—", "—", profile.transportAllowance],
+    ["Trợ cấp nhóm luân phiên", "—", "—", profile.rotatingAllowance],
+    ["Trợ cấp đi trực công ty", "—", "—", profile.companyTransportAllowance],
+    ["Quản lý KLT / trợ cấp cố định khác", "—", "—", profile.kltManagementAllowance],
+    ["Tăng ca ngày thường", `${weekdayHours} giờ`, "x1,5", weekdayPay],
+    ["Tăng ca ngày nghỉ", `${restdayHours} giờ`, "x2", restdayPay],
+    ["Tăng ca ngày lễ", `${holidayHours} giờ`, "x3", holidayPay],
+    ["Phụ trội ca đêm (tạm tính 30%)", `${nightHours} giờ`, "x0,30", nightPay],
+    ["Khoản thu khác: " + (document.getElementById("seOtherIncomeReason").value.trim() || "chưa ghi lý do"), "—", "—", otherIncome],
+    ["BHXH, BHYT, BHTN", "—", "—", -profile.insurance],
+    ["Phí công đoàn", "—", "—", -profile.unionFee],
+    ["Phí ở KLT / khoản chi cố định", "—", "—", -profile.kltFee],
+    ["Khoản chi khác: " + (document.getElementById("seOtherDeductionReason").value.trim() || "chưa ghi lý do"), "—", "—", -otherDeduction],
+    ["TỔNG THU DỰ TÍNH", "", "", gross],
+    ["TỔNG CHI DỰ TÍNH", "", "", deductions],
+    ["THỰC NHẬN DỰ TÍNH (chưa tính thuế TNCN)", "", "", net]
+  ];
+  const tbody = document.getElementById("salaryBreakdown");
+  tbody.innerHTML = "";
+  rows.forEach((r, index) => {
+    const tr = document.createElement("tr");
+    if (index >= rows.length - 3) tr.style.fontWeight = "700";
+    tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${moneyVND(r[3])}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// Admin: cấu hình tổng ngày công theo lịch công ty cho từng tháng
+function initPayrollSettingsPage() {
+  const monthInput = document.getElementById("payrollSettingMonth");
+  if (!monthInput.value) monthInput.value = currentMonthKey();
+  loadPayrollSettingForMonth();
+}
+async function loadPayrollSettingForMonth() {
+  const monthKey = document.getElementById("payrollSettingMonth").value;
+  if (!monthKey) return;
+  try {
+    const snap = await db.collection("payrollSettings").doc(monthKey).get();
+    setInputValue("payrollSettingWorkDays", snap.exists ? snap.data().workDays : "");
+    document.getElementById("payrollSettingMessage").innerText = snap.exists ? `Đã có thiết lập cho tháng ${monthKey}.` : `Chưa thiết lập ngày công cho tháng ${monthKey}.`;
+  } catch (err) {
+    console.error(err);
+    document.getElementById("payrollSettingMessage").innerText = "Không tải được thiết lập: " + err.message;
+  }
+}
+async function savePayrollSetting() {
+  if (!currentUser || currentUser.role !== "admin") return alert("Chỉ admin mới được thiết lập ngày công.");
+  const monthKey = document.getElementById("payrollSettingMonth").value;
+  const workDays = Number(document.getElementById("payrollSettingWorkDays").value);
+  if (!monthKey) return alert("Vui lòng chọn tháng.");
+  if (!Number.isFinite(workDays) || workDays < 0 || workDays > 31) return alert("Số ngày công phải từ 0 đến 31.");
+  try {
+    await db.collection("payrollSettings").doc(monthKey).set({ monthKey, workDays, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: currentUser.name || "admin" }, { merge: true });
+    document.getElementById("payrollSettingMessage").innerText = `Đã lưu ${workDays} ngày công cho tháng ${monthKey}.`;
+  } catch (err) {
+    console.error(err);
+    alert("Không lưu được ngày công: " + err.message);
+  }
+}
+
+// Tự nạp lại thiết lập khi admin đổi tháng
+ document.addEventListener("change", event => {
+  if (event.target && event.target.id === "payrollSettingMonth") loadPayrollSettingForMonth();
+  if (event.target && event.target.id === "salaryMonth" && currentUser && currentUser.role === "emp") loadSalaryEstimatePage();
+});

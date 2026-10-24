@@ -33,10 +33,12 @@
         <a href="#" onclick="showPage('overtime')">Quản lý tăng ca</a>
         <a href="#" onclick="showPage('otCleanup')">Dọn dữ liệu OT</a>
         <a href="#" onclick="showPage('report')">Báo cáo</a>
+        <a href="#" onclick="showPage('payrollSettings')">Cài đặt ngày công</a>
       </div>
       <div id="empMenu">
   <a href="#" onclick="showPage('myovertime')">Lịch tăng ca</a>
   <a href="#" onclick="showPage('totalOvertime')">Tổng thời gian tăng ca</a>
+  <a href="#" onclick="showPage('salaryEstimate')">Dự tính tiền lương tháng này</a>
   <a href="#" onclick="showPage('changePassword')">Đổi mật khẩu</a>
 </div>
       <a href="#" onclick="logout()">Đăng xuất</a>
@@ -82,32 +84,32 @@
 
   <!-- Tiêu đề cho bảng ca -->
   <div class="cards" style="display:flex; gap:20px; font-weight:bold; background:#f0f0f0; padding:10px;">
-    <div style="flex:1;text-align:center;">Ca</div>
-    <div style="flex:1;text-align:center;">Tổng nhân viên tăng ca</div>
-    <div style="flex:1;text-align:center;">Tổng giờ tăng ca</div>
+    <div style="flex:1;">Ca</div>
+    <div style="flex:1;">Tổng nhân viên tăng ca</div>
+    <div style="flex:1;">Tổng giờ tăng ca</div>
   </div>
 
   <!-- Các dòng theo từng ca -->
   <div class="cards" style="display:flex; gap:20px; padding:10px;">
-    <div style="flex:1;text-align:center;">Ca 1</div>
+    <div style="flex:1;">Ca 1</div>
     <div style="flex:1;text-align:center;" id="sOtShift1">0</div>
     <div style="flex:1;text-align:center;" id="sHourShift1">0</div>
   </div>
 
   <div class="cards" style="display:flex; gap:20px; padding:10px;">
-    <div style="flex:1;text-align:center;">Ca 2</div>
+    <div style="flex:1;">Ca 2</div>
     <div style="flex:1;text-align:center;" id="sOtShift2">0</div>
     <div style="flex:1;text-align:center;" id="sHourShift2">0</div>
   </div>
 
   <div class="cards" style="display:flex; gap:20px; padding:10px;">
-    <div style="flex:1;text-align:center;">Ca 3</div>
+    <div style="flex:1;">Ca 3</div>
     <div style="flex:1;text-align:center;" id="sOtShift3">0</div>
     <div style="flex:1;text-align:center;" id="sHourShift3">0</div>
   </div>
 
   <div class="cards" style="display:flex; gap:20px; padding:10px;">
-    <div style="flex:1;text-align:center;">Ca 4</div>
+    <div style="flex:1;">Ca 4</div>
     <div style="flex:1;text-align:center;" id="sOtShift4">0</div>
     <div style="flex:1;text-align:center;" id="sHourShift4">0</div>
   </div>
@@ -204,6 +206,7 @@
               <input id="otStart" type="time">
               <input id="otEnd" type="time">
               <select id="otShift"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+              <select id="otType" aria-label="Loại ngày tăng ca"><option value="weekday">Ngày thường (x1,5)</option><option value="restday">Ngày nghỉ (x2)</option><option value="holiday">Ngày lễ (x3)</option></select>
             </div>
             <textarea id="otWork" placeholder="Nội dung công việc"></textarea>
             <button onclick="saveOT()">Lưu</button>
@@ -218,11 +221,25 @@
 
             <div class="table-scroll-safe">
               <table>
-                <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Thao tác</th></tr></thead>
+                <thead><tr><th>STT</th><th>Mã NV</th><th>Tên NV</th><th>Ca</th><th>Ngày</th><th>Bắt đầu</th><th>Kết thúc</th><th>Công việc</th><th>Loại ngày</th><th>Thao tác</th></tr></thead>
                 <tbody id="otTable"></tbody>
               </table>
             </div>            
 
+          </div>
+        </div>
+
+        <!-- Cài đặt ngày công theo tháng (Admin) -->
+        <div id="payrollSettings" class="page hidden">
+          <h2>📅 Cài đặt ngày công theo tháng</h2>
+          <div class="table-wrap" style="max-width:700px;">
+            <p style="color:#64748b;margin-bottom:12px;">Admin nhập tổng số ngày làm việc theo lịch công ty. Nhân viên sẽ dùng dữ liệu này khi dự tính lương tháng tương ứng.</p>
+            <label for="payrollSettingMonth">Tháng áp dụng</label>
+            <input type="month" id="payrollSettingMonth">
+            <label for="payrollSettingWorkDays">Tổng số ngày làm việc theo lịch công ty</label>
+            <input type="number" id="payrollSettingWorkDays" min="0" max="31" step="0.5" placeholder="Ví dụ: 26">
+            <button type="button" onclick="savePayrollSetting()">Lưu ngày công</button>
+            <div id="payrollSettingMessage" style="margin-top:12px;font-weight:600;"></div>
           </div>
         </div>
 
@@ -345,6 +362,95 @@
 
   </div>
 </div>
+        <!-- Dự tính tiền lương (Nhân viên) -->
+        <div id="salaryEstimate" class="page hidden">
+          <h2>💰 Dự tính tiền lương tháng này</h2>
+          <div class="table-wrap">
+            <div class="salary-month-row">
+              <label for="salaryMonth">Tháng dự tính</label>
+              <input type="month" id="salaryMonth">
+              <button type="button" onclick="loadSalaryEstimatePage()">Tải tháng</button>
+            </div>
+            <p id="salaryWorkDaysInfo" class="salary-note">Ngày công theo lịch công ty: chưa thiết lập.</p>
+          </div>
+
+          <div class="table-wrap">
+            <h3>1. Hồ sơ lương và phụ cấp (lưu để dùng cho các tháng sau)</h3>
+            <p class="salary-note">Nhập lại khi mức lương hoặc trợ cấp thay đổi. Trợ cấp chuyên cần tự động bằng 0 nếu có giờ vắng mặt không hưởng lương.</p>
+            <div class="salary-grid">
+              <label>Lương cơ bản + phụ cấp lương (đồng)<input id="spSalaryBase" type="number" min="0" step="1"></label>
+              <label>Giá trị/giờ (đồng)<input id="spHourlyRate" type="number" min="0" step="1"></label>
+              <label>Trợ cấp chuyên cần (đồng)<input id="spAttendance" type="number" min="0" step="1"></label>
+              <label>Trợ cấp nhà ở (đồng)<input id="spHousing" type="number" min="0" step="1"></label>
+              <label>Trợ cấp công nhân (đồng)<input id="spWorker" type="number" min="0" step="1"></label>
+              <label>Trợ cấp tiếng Nhật (đồng)<input id="spJapanese" type="number" min="0" step="1"></label>
+              <label>Trợ cấp đi lại (đồng)<input id="spTransport" type="number" min="0" step="1"></label>
+              <label>Trợ cấp nhóm luân phiên (đồng)<input id="spRotating" type="number" min="0" step="1"></label>
+              <label>Trợ cấp đi trực công ty (đồng)<input id="spCompanyTransport" type="number" min="0" step="1"></label>
+              <label>Quản lý KLT / trợ cấp khác cố định (đồng)<input id="spKltManagement" type="number" min="0" step="1"></label>
+              <label>Phí ở KLT / khoản chi cố định (đồng)<input id="spKltFee" type="number" min="0" step="1"></label>
+              <label>BHXH, BHYT, BHTN (đồng)<input id="spInsurance" type="number" min="0" step="1"></label>
+              <label>Phí công đoàn (đồng)<input id="spUnionFee" type="number" min="0" step="1"></label>
+              <label>Phép năm chuyển từ năm trước (tối đa 5 ngày)<input id="spCarryoverLeave" type="number" min="0" max="5" step="0.5"></label>
+            </div>
+            <button type="button" onclick="saveSalaryProfile()">Lưu hồ sơ lương</button>
+            <span id="salaryProfileMessage" class="salary-message"></span>
+          </div>
+
+          <div class="table-wrap">
+            <h3>2. Ngày công và phép năm</h3>
+            <div class="salary-grid">
+              <label>Số giờ vắng mặt không hưởng lương<input id="seAbsenceHours" type="number" min="0" step="0.25" value="0"></label>
+              <label>Số ngày phép năm sử dụng trong tháng<input id="seLeaveDays" type="number" min="0" step="0.5" value="0"></label>
+            </div>
+            <p id="salaryLeaveInfo" class="salary-note">Phép năm: chưa tính.</p>
+          </div>
+
+          <div class="table-wrap">
+            <h3>3. Tăng ca trong tháng</h3>
+            <p class="salary-note">Giờ đã đăng ký được lấy tự động từ OT-SYSTEM. Bạn có thể cộng thêm hoặc giảm giờ dự tính tại đây; việc điều chỉnh này không thay đổi dữ liệu tăng ca chính thức của admin.</p>
+            <div class="salary-grid">
+              <label>Giờ ngày thường đã đăng ký<input id="seWeekdayRegistered" type="number" readonly></label>
+              <label>Điều chỉnh giờ ngày thường (+/-)<input id="seWeekdayAdjust" type="number" step="0.25" value="0"></label>
+              <label>Giờ ngày nghỉ đã đăng ký<input id="seRestdayRegistered" type="number" readonly></label>
+              <label>Điều chỉnh giờ ngày nghỉ (+/-)<input id="seRestdayAdjust" type="number" step="0.25" value="0"></label>
+              <label>Giờ ngày lễ đã đăng ký<input id="seHolidayRegistered" type="number" readonly></label>
+              <label>Điều chỉnh giờ ngày lễ (+/-)<input id="seHolidayAdjust" type="number" step="0.25" value="0"></label>
+              <label>Giờ thuộc khung ca đêm 18:00–06:00 đã đăng ký<input id="seNightRegistered" type="number" readonly></label>
+              <label>Điều chỉnh giờ ca đêm (+/-)<input id="seNightAdjust" type="number" step="0.25" value="0"></label>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <h3>4. Khoản thu/chi khác (nếu có)</h3>
+            <div class="salary-grid">
+              <label>Khoản thu khác (đồng)<input id="seOtherIncome" type="number" min="0" step="1" value="0"></label>
+              <label>Lý do khoản thu khác<input id="seOtherIncomeReason" type="text" placeholder="Ví dụ: thưởng phát sinh"></label>
+              <label>Khoản chi khác (đồng)<input id="seOtherDeduction" type="number" min="0" step="1" value="0"></label>
+              <label>Lý do khoản chi khác<input id="seOtherDeductionReason" type="text" placeholder="Ví dụ: khấu trừ theo quy định"></label>
+            </div>
+            <button type="button" onclick="saveMonthlySalaryInputs()">Lưu dữ liệu dự tính tháng</button>
+            <button type="button" onclick="calculateSalaryEstimate(true)">Tính lương dự tính</button>
+            <span id="salaryEstimateMessage" class="salary-message"></span>
+          </div>
+
+          <div class="cards salary-result-cards">
+            <div class="stat"><h3>Tổng thu dự tính</h3><h1 id="seGrossResult">0 đ</h1></div>
+            <div class="stat"><h3>Tổng chi dự tính</h3><h1 id="seDeductionResult">0 đ</h1></div>
+            <div class="stat"><h3>Thực nhận dự tính</h3><h1 id="seNetResult">0 đ</h1></div>
+          </div>
+          <div class="table-wrap">
+            <h3>5. Bảng chi tiết lương dự tính</h3>
+            <div class="table-scroll-safe salary-breakdown-wrap">
+              <table>
+                <thead><tr><th>Khoản mục</th><th>Số giờ/ngày</th><th>Đơn giá / hệ số</th><th>Thành tiền</th></tr></thead>
+                <tbody id="salaryBreakdown"></tbody>
+              </table>
+            </div>
+            <p class="salary-note">Đây là số tiền dự tính, không phải bảng lương chính thức. Thuế thu nhập cá nhân chưa được tính theo yêu cầu.</p>
+          </div>
+        </div>
+
     <!-- Đổi mật khẩu nhân viên -->
 <div id="changePassword" class="page hidden">
 
