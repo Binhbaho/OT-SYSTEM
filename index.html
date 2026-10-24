@@ -2772,60 +2772,65 @@ function renderTotalOT(){
   // Gọi tính toán
   calcTotal();
 }
+function formatDate(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,"0");
+    const d = String(date.getDate()).padStart(2,"0");
 
+    return `${y}-${m}-${d}`;
+}
 // Chỉnh showPage để gọi renderTotalOT khi mở trang nhân viên
 function showPage(id){
 
-  document
-    .querySelectorAll(".page")
-    .forEach(p => p.classList.add("hidden"));
+    document
+      .querySelectorAll(".page")
+      .forEach(p => p.classList.add("hidden"));
 
-  document
-    .getElementById(id)
-    .classList.remove("hidden");
+    document
+      .getElementById(id)
+      .classList.remove("hidden");
 
-  if(
-      id === "totalOvertime" &&
-      currentUser &&
-      currentUser.role === "emp"
-  ){
+    if(
+        id === "totalOvertime" &&
+        currentUser &&
+        currentUser.role === "emp"
+    ){
 
-      if(
-          !document.getElementById("totalStart").value &&
-          !document.getElementById("totalEnd").value
-      ){
+        if(
+            !document.getElementById("totalStart").value &&
+            !document.getElementById("totalEnd").value
+        ){
 
-          const now = new Date();
+            const now = new Date();
 
-          const firstDay =
-              new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  1
-              )
-              .toISOString()
-              .split("T")[0];
+            const firstDay =
+                formatDate(
+                    new Date(
+                        now.getFullYear(),
+                        now.getMonth(),
+                        1
+                    )
+                );
 
-          const lastDay =
-              new Date(
-                  now.getFullYear(),
-                  now.getMonth() + 1,
-                  0
-              )
-              .toISOString()
-              .split("T")[0];
+            const lastDay =
+                formatDate(
+                    new Date(
+                        now.getFullYear(),
+                        now.getMonth()+1,
+                        0
+                    )
+                );
 
-          document.getElementById("totalStart").value =
-              firstDay;
+            document.getElementById("totalStart").value =
+                firstDay;
 
-          document.getElementById("totalEnd").value =
-              lastDay;
-      }
+            document.getElementById("totalEnd").value =
+                lastDay;
+        }
 
-      calcTotal();
-  }
+        calcTotal();
+    }
 }
-
  </script>
 </body>
 </html>
